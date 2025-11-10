@@ -30,7 +30,7 @@ export default async function AdminPage() {
         <nav className="flex flex-col justify-between h-full">
           <ul>
             <li>
-              <Link href="/admin/users" className="block py-2">
+              <Link href="/admin/users" className="block py-2 bg-gray-700 rounded">
                 Manage Users
               </Link>
             </li>

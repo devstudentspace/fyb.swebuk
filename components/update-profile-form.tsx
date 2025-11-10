@@ -29,6 +29,8 @@ export default function UpdateProfileForm({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   useEffect(() => {
     if (profile.avatar_url) {
       const { data } = supabase.storage
@@ -50,26 +52,8 @@ export default function UpdateProfileForm({
       }
 
       const file = event.target.files[0];
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      setAvatarUrl(data.publicUrl);
-
-      await supabase
-        .from("profiles")
-        .update({ avatar_url: filePath })
-        .eq("id", user.id);
-
-      alert("Avatar updated successfully!");
+      setAvatarFile(file);
+      setAvatarUrl(URL.createObjectURL(file));
     } catch (error) {
       setError(
         error instanceof Error ? error.message : "Error uploading avatar."
@@ -85,9 +69,25 @@ export default function UpdateProfileForm({
       setUploading(true);
       setError(null);
 
+      let avatar_url = profile.avatar_url;
+
+      if (avatarFile) {
+        const fileExt = avatarFile.name.split(".").pop();
+        const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(filePath, avatarFile);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+        avatar_url = filePath;
+      }
+
       await supabase
         .from("profiles")
-        .update({ full_name: fullName })
+        .update({ full_name: fullName, avatar_url })
         .eq("id", user.id);
 
       router.refresh();

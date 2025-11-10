@@ -1,12 +1,31 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { LogoutButton } from "@/components/logout-button";
+import Image from "next/image";
 
 export default async function Home() {
   const supabase = await createClient();
 
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    profile = data;
+  }
+
+  let avatarUrl = null;
+  if (profile?.avatar_url) {
+    const { data } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(profile.avatar_url);
+    avatarUrl = data.publicUrl;
+  }
 
   return (
     <main className="min-h-screen flex flex-col items-center">
@@ -16,9 +35,8 @@ export default async function Home() {
             <div className="flex gap-5 items-center font-semibold">
               <Link href={"/"}>Swebuk</Link>
               <div className="flex items-center gap-2">
-                {user?.role === "admin" && (
-                  <Link href={"/admin"}>Admin</Link>
-                )}
+                {user?.role === "admin" && <Link href={"/admin"}>Admin</Link>}
+                {user && <Link href={"/profile"}>Profile</Link>}
               </div>
             </div>
             {user ? (
@@ -30,11 +48,25 @@ export default async function Home() {
         </nav>
         <div className="flex-1 flex flex-col gap-20 max-w-5xl p-5">
           <main className="flex-1 flex flex-col gap-6 px-4">
-            {user ? (
-              <div>
-                <h2 className="font-medium text-xl mb-4">
-                  Welcome, {user.email} ({user.role})
-                </h2>
+            {user && profile ? (
+              <div className="flex items-center gap-4">
+                {avatarUrl && (
+                  <Image
+                    src={avatarUrl}
+                    alt="Avatar"
+                    width={80}
+                    height={80}
+                    className="rounded-full"
+                    unoptimized
+                  />
+                )}
+                <div>
+                  <h2 className="font-medium text-xl mb-1">
+                    Welcome, {profile.full_name}
+                  </h2>
+                  <p className="text-sm text-gray-500">({user.email})</p>
+                  <p className="text-sm text-gray-500">({profile.role})</p>
+                </div>
               </div>
             ) : (
               <div>

@@ -4,7 +4,10 @@ LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 AS $$
+DECLARE
+  user_role text;
 BEGIN
-  RETURN jsonb_build_object('role', 'user');
+  SELECT role INTO user_role FROM public.profiles WHERE id = uid;
+  RETURN jsonb_build_object('role', user_role);
 END;
 $$;

@@ -40,7 +40,7 @@ export function TopNav({ user, onMenuClick }: TopNavProps) {
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/20 bg-card/80 backdrop-blur-md px-6 sticky top-0 z-30">
         {/* Left Side: Mobile Menu Button & Desktop Nav */}
         <div className="flex items-center gap-4">
           {/* Mobile Menu Button */}

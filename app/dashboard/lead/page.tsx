@@ -30,17 +30,17 @@ export default async function LeadPage() {
         <nav className="flex flex-col justify-between h-full">
           <ul>
             <li>
-              <Link href="/lead/members" className="block py-2">
+              <Link href="/dashboard/lead/members" className="block py-2">
                 Manage Members
               </Link>
             </li>
             <li>
-              <Link href="/lead/projects" className="block py-2">
+              <Link href="/dashboard/lead/projects" className="block py-2">
                 Manage Projects
               </Link>
             </li>
             <li>
-              <Link href="/lead/blog" className="block py-2">
+              <Link href="/dashboard/lead/blog" className="block py-2">
                 Manage Blog Posts
               </Link>
             </li>

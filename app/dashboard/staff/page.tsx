@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 
-export default async function AdminPage() {
+export default async function StaffPage() {
   const supabase = await createClient();
 
   const {
@@ -19,28 +19,28 @@ export default async function AdminPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "admin") {
+  if (!profile || profile.role !== "staff") {
     return redirect("/");
   }
 
   return (
     <div className="flex min-h-screen">
       <aside className="w-64 bg-gray-800 text-white p-4">
-        <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+        <h2 className="text-2xl font-bold mb-4">Staff Dashboard</h2>
         <nav className="flex flex-col justify-between h-full">
           <ul>
             <li>
-              <Link href="/admin/users" className="block py-2 bg-gray-700 rounded">
+              <Link href="/dashboard/staff/clusters" className="block py-2">
+                Manage Clusters
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard/staff/users" className="block py-2 bg-gray-700 rounded">
                 Manage Users
               </Link>
             </li>
             <li>
-              <Link href="/admin/roles" className="block py-2">
-                Manage Roles
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin/settings" className="block py-2">
+              <Link href="/dashboard/staff/settings" className="block py-2">
                 System Settings
               </Link>
             </li>
@@ -57,7 +57,7 @@ export default async function AdminPage() {
         <h1 className="text-3xl font-bold mb-4">
           Welcome, {profile.full_name}
         </h1>
-        <p>This is your admin dashboard.</p>
+        <p>This is your staff dashboard.</p>
       </main>
     </div>
   );

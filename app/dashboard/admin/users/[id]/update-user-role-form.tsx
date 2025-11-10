@@ -24,7 +24,7 @@ export default function UpdateUserRoleForm({
     if (error) {
       console.error(error);
     } else {
-      router.push("/admin/users");
+      router.push("/dashboard/admin/users");
     }
   };
 

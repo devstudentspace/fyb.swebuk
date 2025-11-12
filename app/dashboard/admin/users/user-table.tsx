@@ -35,9 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { createClient } from "@/lib/supabase/client";
 import { MoreHorizontal, User as UserIcon } from "lucide-react";
 import { UserProfile } from "./page"; // Import the shared interface
+import { updateUserProfile, deleteUser } from "@/lib/supabase/admin-actions";
 
 interface UserTableProps {
   profiles: UserProfile[];
@@ -77,22 +77,20 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
 
     setIsLoading(true);
     setError(null);
-    const supabase = createClient();
 
     try {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: editFormData.fullName,
-          role: editFormData.role,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingUser.id);
+      const result = await updateUserProfile(
+        editingUser.id,
+        editFormData.fullName,
+        editFormData.role
+      );
 
-      if (profileError) throw profileError;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       setEditingUser(null);
-      onUpdate();
+      onUpdate(); // This will trigger router.refresh() in the parent
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Failed to update user");
     } finally {
@@ -105,18 +103,16 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
 
     setIsLoading(true);
     setError(null);
-    const supabase = createClient();
 
     try {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", deletingUser.id);
+      const result = await deleteUser(deletingUser.id);
 
-      if (profileError) throw profileError;
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       setDeletingUser(null);
-      onUpdate();
+      onUpdate(); // This will trigger router.refresh() in the parent
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Failed to delete user");
     } finally {

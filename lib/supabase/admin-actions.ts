@@ -21,46 +21,33 @@ export async function updateUserProfile(userId: string, fullName: string, role: 
   const supabase = await createAdminClient();
 
   try {
-    // First, check if profile exists
-    const { data: profileData, error: selectError } = await supabase
+    // Update the auth user's metadata
+    const { data: authUser, error: authError } = await supabase.auth.admin.updateUserById(
+      userId,
+      {
+        user_metadata: { role: role, full_name: fullName },
+      }
+    );
+
+    if (authError) {
+      console.error("Error updating auth user:", authError);
+      throw new Error(`Failed to update auth user: ${authError.message}`);
+    }
+
+    // Update the public profile table
+    const { error: profileError } = await supabase
       .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .single();
+      .update({
+        full_name: fullName,
+        role: role,
+      })
+      .eq("id", userId);
 
-    if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is the code for no rows returned
-      console.error("Error checking profile existence:", selectError);
-      throw new Error(`Error checking profile existence: ${selectError.message}`);
-    }
-
-    let profileOperation;
-    if (profileData) {
-      // Profile exists, update it
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: fullName,
-          role: role,
-        })
-        .eq("id", userId);
-      
-      profileOperation = updateError;
-    } else {
-      // Profile doesn't exist, create it
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert({
-          id: userId,
-          full_name: fullName,
-          role: role,
-        });
-      
-      profileOperation = insertError;
-    }
-
-    if (profileOperation) {
-      console.error("Error in profile operation:", profileOperation);
-      throw new Error(`Failed to update/create user profile: ${profileOperation.message}`);
+    if (profileError) {
+      console.error("Error updating profile:", profileError);
+      // Even if profile update fails, auth was updated, so this is a partial success.
+      // Depending on requirements, you might want to handle this differently.
+      throw new Error(`Failed to update user profile: ${profileError.message}`);
     }
 
     return { success: true };

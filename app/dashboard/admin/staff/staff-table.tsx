@@ -38,18 +38,18 @@ interface UserProfile {
   email_confirmed_at: string | null;
 }
 
-interface UserTableProps {
+interface StaffTableProps {
   profiles: UserProfile[];
   currentUserRole: string;
   onUpdate: () => void;
 }
 
-export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProps) {
+export function StaffTable({ profiles, currentUserRole, onUpdate }: StaffTableProps) {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
   const [editFormData, setEditFormData] = useState({
     fullName: "",
-    role: "student",
+    role: "staff", // Default role is staff
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
     setEditingUser(user);
     setEditFormData({
       fullName: user.full_name || "",
-      role: user.role || "student",
+      role: user.role || "staff",
     });
   };
 
@@ -102,9 +102,6 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
     const supabase = createClient();
 
     try {
-      // Note: This only deletes the profile. The auth user might remain.
-      // For a full delete, an admin-privileged server action is required.
-      // This matches the implementation of the admin/users page.
       const { error: profileError } = await supabase
         .from("profiles")
         .delete()
@@ -129,7 +126,6 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -142,23 +138,6 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
                   {profile.full_name || "N/A"}
                 </TableCell>
                 <TableCell>{profile.email || "N/A"}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      profile.role === "admin"
-                        ? "destructive"
-                        : profile.role === "staff"
-                        ? "default"
-                        : profile.role === "lead"
-                        ? "secondary"
-                        : profile.role === "deputy"
-                        ? "outline"
-                        : "outline"
-                    }
-                  >
-                    {profile.role || "student"}
-                  </Badge>
-                </TableCell>
                 <TableCell>
                   <Badge variant="outline">
                     {profile.email_confirmed_at ? "Active" : "Pending"}
@@ -176,7 +155,8 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
                     >
                       Edit
                     </Button>
-                    {(currentUserRole === "admin" || profile.role !== "admin") && (
+                    {/* Only admins can delete other users */}
+                    {currentUserRole === "admin" && (
                       <Button
                         variant="destructive"
                         size="sm"
@@ -197,9 +177,9 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
+            <DialogTitle>Edit Staff Member</DialogTitle>
             <DialogDescription>
-              Update user information and role permissions.
+              Update staff information and role permissions.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -240,14 +220,12 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Admins can change a staff member to another role if needed */}
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="lead">Lead</SelectItem>
                     <SelectItem value="deputy">Deputy</SelectItem>
                     <SelectItem value="staff">Staff</SelectItem>
-                    {/* A staff member cannot create an admin */}
-                    {currentUserRole === "admin" && (
-                      <SelectItem value="admin">Admin</SelectItem>
-                    )}
+                    <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -276,9 +254,9 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
       <Dialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Delete User</DialogTitle>
+            <DialogTitle>Delete Staff Member</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this user? This action cannot be undone.
+              Are you sure you want to delete this staff member? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
@@ -287,11 +265,6 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
               <p className="font-medium">{deletingUser?.full_name || "N/A"}</p>
               <p className="text-sm text-muted-foreground mt-1">{deletingUser?.email}</p>
               <p className="text-sm text-muted-foreground">Role: {deletingUser?.role}</p>
-              {currentUserRole === "admin" && deletingUser?.role === "admin" && (
-                <p className="text-xs text-orange-600 mt-2">
-                  ⚠️ You are deleting another admin user
-                </p>
-              )}
             </div>
           </div>
 
@@ -310,7 +283,7 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
               onClick={handleDeleteConfirm}
               disabled={isLoading}
             >
-              {isLoading ? "Deleting..." : "Delete User"}
+              {isLoading ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </DialogContent>

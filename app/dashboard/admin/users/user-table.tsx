@@ -190,7 +190,6 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
           </TableBody>
         </Table>
       </div>
-
       {/* Edit User Dialog */}
       <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
         <DialogContent className="sm:max-w-[500px]">

@@ -57,19 +57,25 @@ export default async function UsersPage() {
   // Create a map of profiles for easy lookup
   const profilesMap = new Map(profiles.map(p => [p.id, p]));
 
-  // Combine auth users with their profiles
-  const combinedUsers: UserProfile[] = authUsersResponse.users.map((authUser: User) => {
-    const userProfile = profilesMap.get(authUser.id);
-    return {
-      id: authUser.id,
-      email: authUser.email || "No email",
-      full_name: userProfile?.full_name || authUser.user_metadata?.full_name || "No name",
-      role: userProfile?.role || "student",
-      created_at: authUser.created_at,
-      email_confirmed_at: authUser.email_confirmed_at,
-      avatar_url: userProfile?.avatar_url || null,
-    };
-  });
+  // Combine auth users with their profiles, filtering out staff members (handled in staff management)
+  const combinedUsers: UserProfile[] = authUsersResponse.users
+    .filter((authUser: User) => {
+      const userProfile = profilesMap.get(authUser.id);
+      // Only include non-staff users in student management
+      return userProfile?.role !== "staff" && userProfile?.role !== "admin";
+    })
+    .map((authUser: User) => {
+      const userProfile = profilesMap.get(authUser.id);
+      return {
+        id: authUser.id,
+        email: authUser.email || "No email",
+        full_name: userProfile?.full_name || authUser.user_metadata?.full_name || "No name",
+        role: userProfile?.role || "student",
+        created_at: authUser.created_at,
+        email_confirmed_at: authUser.email_confirmed_at,
+        avatar_url: userProfile?.avatar_url || null,
+      };
+    });
 
   return (
     <div className="flex-1 w-full flex flex-col items-center">

@@ -53,7 +53,7 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
     const adminNav = {
       "Admin Panel": [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/dashboard/admin/users", label: "User Management", icon: Users },
+        { href: "/dashboard/admin/users", label: "Student Management", icon: Users },
         { href: "/dashboard/admin/staff", label: "Staff Management", icon: UserCog },
       ],
       "Content": [
@@ -77,7 +77,7 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
         return {
           "Content": adminNav.Content,
           "Management": [
-            { href: "/dashboard/staff/users", label: "User Management", icon: Users },
+            { href: "/dashboard/staff/users", label: "Student Management", icon: Users },
             { href: "/dashboard/staff/staff", label: "Staff Management", icon: UserCog },
           ],
           "System": adminNav.System

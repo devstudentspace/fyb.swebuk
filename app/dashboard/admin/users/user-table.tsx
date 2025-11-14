@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MoreHorizontal, User as UserIcon } from "lucide-react";
 import { UserProfile } from "./page"; // Import the shared interface
 import { updateUserProfile, deleteUser } from "@/lib/supabase/admin-actions";
+import { createClient } from "@/lib/supabase/client";
 
 interface UserTableProps {
   profiles: UserProfile[];
@@ -49,6 +50,7 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
   const [viewingUser, setViewingUser] = useState<UserProfile | null>(null);
+  const [viewingUserAvatarUrl, setViewingUserAvatarUrl] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({
     fullName: "",
     role: "student",
@@ -70,6 +72,43 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
   
   const handleView = (user: UserProfile) => {
     setViewingUser(user);
+
+    // Fetch the signed URL for the user's avatar if it exists
+    if (user.avatar_url) {
+      const fetchAvatarUrl = async () => {
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase.storage
+            .from('avatars')
+            .createSignedUrl(user.avatar_url, 3600); // 1 hour expiry
+
+          if (error) {
+            console.error('Error creating signed URL for avatar:', error);
+            // Fallback to getPublicUrl if createSignedUrl fails
+            const { data: publicData } = await supabase.storage
+              .from('avatars')
+              .getPublicUrl(user.avatar_url);
+            // Normalize hostname for consistency
+            setViewingUserAvatarUrl(publicData?.publicUrl?.replace('localhost', '127.0.0.1') || null);
+          } else {
+            // Normalize hostname for consistency
+            setViewingUserAvatarUrl(data?.signedUrl?.replace('localhost', '127.0.0.1') || null);
+          }
+        } catch (err: any) {
+          console.error('Unexpected error getting avatar URL:', err);
+          // Check if it's a timeout or network error and handle appropriately
+          if (err?.message?.includes('timeout') || err?.status === 500) {
+            console.warn('Storage timeout or server error - using fallback avatar');
+          }
+          setViewingUserAvatarUrl(null);
+        }
+      };
+
+      fetchAvatarUrl();
+    } else {
+      // If no avatar_url, set to null
+      setViewingUserAvatarUrl(null);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -196,14 +235,19 @@ export function UserTable({ profiles, currentUserRole, onUpdate }: UserTableProp
       </div>
 
       {/* View User Dialog */}
-      <Dialog open={!!viewingUser} onOpenChange={(open) => !open && setViewingUser(null)}>
+      <Dialog open={!!viewingUser} onOpenChange={(open) => {
+        if (!open) {
+          setViewingUser(null);
+          setViewingUserAvatarUrl(null); // Reset avatar URL when dialog is closed
+        }
+      }}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
           </DialogHeader>
           <div className="py-4 flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={viewingUser?.avatar_url || undefined} alt={viewingUser?.full_name || ""} />
+              <AvatarImage src={viewingUserAvatarUrl || undefined} alt={viewingUser?.full_name || ""} />
               <AvatarFallback className="text-3xl">
                 {viewingUser?.full_name ? viewingUser.full_name.charAt(0).toUpperCase() : <UserIcon />}
               </AvatarFallback>

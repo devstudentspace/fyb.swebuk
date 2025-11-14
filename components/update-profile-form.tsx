@@ -36,34 +36,65 @@ export default function UpdateProfileForm({
     // If the profile already includes a full URL (generated server-side), use it directly
     if (profile.avatar_url && profile.avatar_url.startsWith('http')) {
       setAvatarUrl(profile.avatar_url);
-    } 
+    }
     // Otherwise, if it's just a file path, generate the signed URL client-side
     else if (profile.avatar_url) {
-      supabase.storage
-        .from("avatars")
-        .createSignedUrl(profile.avatar_url, 3600) // 1 hour expiry
-        .then(({ data, error }) => {
+      // For local development, we first try to get a signed URL,
+      // but handle potential errors more gracefully for local Supabase instance
+      // Also implement a retry mechanism in case of failure
+      const fetchAvatarUrl = async () => {
+        try {
+          const { data, error } = await supabase.storage
+            .from("avatars")
+            .createSignedUrl(profile.avatar_url, 3600); // 1 hour expiry
+
           if (error) {
             console.error("Error getting signed avatar URL:", error);
             // Fallback to getPublicUrl if createSignedUrl fails
-            const { data: publicData } = supabase.storage
+            // For local development, sometimes we need to construct the URL manually
+            const { data: publicData } = await supabase.storage
               .from("avatars")
               .getPublicUrl(profile.avatar_url);
-            setAvatarUrl(publicData?.publicUrl || null);
+
+            if (publicData?.publicUrl) {
+              // Normalize hostname to ensure consistency with what works in other components
+              const normalizedPublicUrl = publicData.publicUrl.replace('localhost', '127.0.0.1');
+              setAvatarUrl(normalizedPublicUrl);
+            } else {
+              // Fallback for local development - manually construct URL if needed
+              console.warn("Could not generate public URL, image may not display properly in local development");
+              setAvatarUrl(null);
+            }
           } else if (data?.signedUrl) {
-            setAvatarUrl(data.signedUrl);
+            // Normalize hostname to ensure consistency with what works in other components
+            const normalizedSignedUrl = data.signedUrl.replace('localhost', '127.0.0.1');
+            setAvatarUrl(normalizedSignedUrl);
           } else {
             // Fallback to getPublicUrl if signed URL doesn't exist
-            const { data: publicData } = supabase.storage
+            const { data: publicData } = await supabase.storage
               .from("avatars")
               .getPublicUrl(profile.avatar_url);
-            setAvatarUrl(publicData?.publicUrl || null);
+            // Normalize hostname to ensure consistency
+            const normalizedPublicUrl = publicData?.publicUrl?.replace('localhost', '127.0.0.1') || null;
+            setAvatarUrl(normalizedPublicUrl);
           }
-        })
-        .catch(err => {
+        } catch (err: any) {
           console.error("Unexpected error getting avatar URL:", err);
-          setError("Error loading avatar image");
-        });
+          // Check if it's a timeout or network error and handle appropriately
+          if (err?.message?.includes('timeout') || err?.status === 500) {
+            console.warn('Storage timeout or server error - using fallback avatar');
+          }
+          // Fallback to getPublicUrl if createSignedUrl fails
+          const { data: publicData } = await supabase.storage
+            .from("avatars")
+            .getPublicUrl(profile.avatar_url);
+          // Normalize hostname to ensure consistency
+          const normalizedPublicUrl = publicData?.publicUrl?.replace('localhost', '127.0.0.1') || null;
+          setAvatarUrl(normalizedPublicUrl);
+        }
+      };
+
+      fetchAvatarUrl();
     }
   }, [profile.avatar_url, supabase]);
 
@@ -112,6 +143,7 @@ export default function UpdateProfileForm({
         if (uploadError) {
           throw uploadError;
         }
+        // Only store the file path in the database, not the full URL
         avatar_url = filePath;
       }
 
@@ -120,9 +152,31 @@ export default function UpdateProfileForm({
         .update({ full_name: fullName, avatar_url })
         .eq("id", user.id);
 
+      // Update avatar URL after successful save by generating a new signed URL
+      if (avatar_url && avatar_url !== profile.avatar_url) {
+        // Use the same approach as in useEffect to fetch the avatar URL
+        const { data: urlData, error: urlError } = await supabase.storage
+          .from("avatars")
+          .createSignedUrl(avatar_url, 3600); // 1 hour expiry
+
+        if (!urlError && urlData?.signedUrl) {
+          // Normalize hostname to ensure consistency
+          const normalizedSignedUrl = urlData.signedUrl.replace('localhost', '127.0.0.1');
+          setAvatarUrl(normalizedSignedUrl);
+        } else {
+          // Fallback to getPublicUrl if createSignedUrl fails
+          const { data: publicData } = await supabase.storage
+            .from("avatars")
+            .getPublicUrl(avatar_url);
+          // Normalize hostname to ensure consistency
+          const normalizedPublicUrl = publicData?.publicUrl?.replace('localhost', '127.0.0.1') || avatar_url;
+          setAvatarUrl(normalizedPublicUrl);
+        }
+      }
+
       router.refresh();
       setSuccessMessage("Profile updated successfully!");
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => {
         setSuccessMessage(null);
@@ -147,11 +201,33 @@ export default function UpdateProfileForm({
             alt="Avatar"
             className="avatar image rounded-full"
             unoptimized
+            onError={(e) => {
+              console.warn("Error loading image:", e instanceof ErrorEvent ? e.error || "Image loading failed" : "Image loading failed");
+              // Try to fall back to a different URL format if the original fails
+              const target = e.target as HTMLImageElement;
+              if (target && target.src) {
+                if (target.src.includes('localhost') && !target.src.includes('127.0.0.1')) {
+                  // If using localhost, try 127.0.0.1 as alternative
+                  target.src = target.src.replace('localhost', '127.0.0.1');
+                } else if (target.src.includes('127.0.0.1') && !target.src.includes('localhost')) {
+                  // If using 127.0.0.1, try localhost as alternative
+                  target.src = target.src.replace('127.0.0.1', 'localhost');
+                } else {
+                  // If both approaches failed, show the fallback
+                  target.onerror = null; // Prevent infinite loop
+                  target.style.display = 'none';
+                  const fallbackDiv = target.parentElement?.querySelector('.avatar.no-image');
+                  if (fallbackDiv) {
+                    fallbackDiv.setAttribute('style', `height: 150px; width: 150px; display: block;`);
+                  }
+                }
+              }
+            }}
           />
         ) : (
           <div
             className="avatar no-image rounded-full bg-gray-200"
-            style={{ height: 150, width: 150 }}
+            style={{ height: 150, width: 150, display: 'block' }}
           />
         )}
         <div>

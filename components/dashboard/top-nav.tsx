@@ -17,7 +17,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -31,6 +31,82 @@ export function TopNav({ user, userRole, onMenuClick }: TopNavProps) {
   const router = useRouter();
   const supabase = createClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      setIsAvatarLoading(true);
+      console.log('Fetching profile for user:', user.id);
+      try {
+        // Fetch the user's profile to get their avatar
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        console.log('Profile data:', profileData, 'Profile error:', profileError);
+
+        if (profileError) {
+          console.error('Error fetching user profile for avatar:', profileError);
+          // If there's an error fetching the profile (including timeout), we'll use the fallback avatar
+          setAvatarUrl(null);
+          return;
+        }
+
+        if (profileData?.avatar_url) {
+          console.log('Found avatar URL in profile:', profileData.avatar_url);
+          // If the profile has an avatar_url, try to get the signed URL
+          try {
+            const { data, error } = await supabase.storage
+              .from('avatars')
+              .createSignedUrl(profileData.avatar_url, 3600); // 1 hour expiry
+
+            console.log('Signed URL data:', data, 'Error:', error);
+
+            if (error) {
+              console.error('Error creating signed URL for avatar:', error);
+              // Fallback to getPublicUrl if createSignedUrl fails
+              const { data: publicData } = await supabase.storage
+                .from('avatars')
+                .getPublicUrl(profileData.avatar_url);
+              console.log('Public URL data:', publicData);
+              // Normalize hostname to ensure consistency
+              const normalizedPublicUrl = publicData?.publicUrl?.replace('localhost', '127.0.0.1') || null;
+              setAvatarUrl(normalizedPublicUrl);
+            } else {
+              // Normalize hostname to ensure consistency with what works in profile page
+              const normalizedSignedUrl = data?.signedUrl?.replace('localhost', '127.0.0.1') || null;
+              setAvatarUrl(normalizedSignedUrl);
+            }
+          } catch (err: any) {
+            console.error('Unexpected error getting avatar URL:', err);
+            // Check if it's a timeout or network error and handle appropriately
+            if (err?.message?.includes('timeout') || err?.status === 500) {
+              console.warn('Storage timeout or server error - using fallback avatar');
+            }
+            setAvatarUrl(null);
+          }
+        } else {
+          console.log('No avatar URL in profile');
+          // No avatar in profile, use null to trigger fallback
+          setAvatarUrl(null);
+        }
+      } catch (err: any) {
+        console.error('Unexpected error in fetchUserProfile:', err);
+        // Handle any other unexpected errors
+        if (err?.message?.includes('timeout') || err?.status === 500) {
+          console.warn('Database timeout or server error - using fallback avatar');
+        }
+        setAvatarUrl(null);
+      } finally {
+        setIsAvatarLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user.id, supabase]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -95,7 +171,27 @@ export function TopNav({ user, userRole, onMenuClick }: TopNavProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2 rounded-full border-none hover:bg-transparent">
-                <img src={`https://api.dicebear.com/8.x/initials/svg?seed=${user.email}`} alt="User avatar" className="h-8 w-8 rounded-full" />
+                <img
+                  src={isAvatarLoading || !avatarUrl ? `https://api.dicebear.com/8.x/initials/svg?seed=${user.email}` : avatarUrl}
+                  alt="User avatar"
+                  className="h-8 w-8 rounded-full"
+                  onError={(e) => {
+                    console.warn("Error loading avatar image:", e);
+                    // If the profile image fails to load, fall back to the DiceBear avatar
+                    // Also try to fix potential localhost/127.0.0.1 hostname mismatch
+                    const target = e.target as HTMLImageElement;
+                    if (target.src.includes('localhost') && !target.src.includes('127.0.0.1')) {
+                      // If using localhost, try 127.0.0.1 as alternative
+                      target.src = target.src.replace('localhost', '127.0.0.1');
+                    } else if (target.src.includes('127.0.0.1') && !target.src.includes('localhost')) {
+                      // If using 127.0.0.1, try localhost as alternative
+                      target.src = target.src.replace('127.0.0.1', 'localhost');
+                    } else {
+                      // If both approaches failed, fall back to DiceBear avatar
+                      target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${user.email}`;
+                    }
+                  }}
+                />
                 <div className="hidden text-left md:block">
                   <div className="text-sm font-medium">{user.email}</div>
                   <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">{userRole}</span>

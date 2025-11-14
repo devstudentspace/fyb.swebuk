@@ -32,14 +32,16 @@ export default async function LeadProfilePage() {
     return <div>User profile not found.</div>;
   }
 
-  // Generate the signed URL for the avatar server-side (works better for local Supabase)
+  // Generate the URL for the avatar server-side (works better for local Supabase)
   let avatarPublicUrl = null;
   if (profileData.avatar_url) {
     try {
+      // For local development, we might need to handle the URL differently
+      // First, try to create a signed URL
       const { data: urlData, error: urlError } = await supabase.storage
         .from("avatars")
         .createSignedUrl(profileData.avatar_url, 3600); // 1 hour expiry
-      
+
       if (urlError) {
         console.error("Error creating signed URL:", urlError);
         // Fallback to public URL

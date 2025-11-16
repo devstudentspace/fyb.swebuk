@@ -188,6 +188,10 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
 
   // Leadership management functions
   const handleLeadershipChange = async (role: string, newUserId: string) => {
+    if (role === 'lead' && !['admin', 'staff'].includes(userRole || '')) {
+      toast.error("You don't have permission to assign a lead student.");
+      return;
+    }
     if (!cluster || !user) return;
 
     try {
@@ -283,12 +287,12 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
           description: formData.description,
           status: formData.status
         })
-        .eq("id", clusterId);
+        .eq("id", cluster.id);
 
       if (error) throw error;
 
       toast.success("Cluster updated successfully");
-      router.push(`/dashboard/clusters/${clusterId}`); // Redirect back to cluster page
+      router.push(`/dashboard/clusters/${cluster.id}`); // Redirect back to cluster page
     } catch (error: any) {
       console.error("Error updating cluster:", error);
       toast.error("Failed to update cluster: " + error.message);
@@ -340,7 +344,7 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
           <p className="text-destructive">You don't have permission to manage this cluster</p>
           <Button 
             className="mt-4" 
-            onClick={() => router.push(`/dashboard/clusters/${clusterId}`)}
+            onClick={() => router.push(`/dashboard/clusters/${params.id}`)}
           >
             Back to Cluster
           </Button>
@@ -424,7 +428,7 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push(`/dashboard/clusters/${clusterId}`)}
+                onClick={() => router.push(`/dashboard/clusters/${cluster.id}`)}
                 className="border-2 hover:bg-muted"
               >
                 Cancel
@@ -463,14 +467,16 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     {cluster.lead_email && <span className="text-muted-foreground block text-xs">{cluster.lead_email}</span>}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { setShowLeadDialog(true); }}
-                  className="border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/20"
-                >
-                  {cluster.lead_name ? "Change" : "Assign"}
-                </Button>
+                {(userRole === 'admin' || userRole === 'staff') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setShowLeadDialog(true); }}
+                    className="border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/20"
+                  >
+                    {cluster.lead_name ? "Change" : "Assign"}
+                  </Button>
+                )}
               </div>
             </div>
             <div className="space-y-3 p-4 rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10">

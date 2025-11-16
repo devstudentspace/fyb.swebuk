@@ -170,6 +170,10 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
   }, [clusterId]);
 
   const handleApproveRequest = async (requestId: string) => {
+    if (!['admin', 'staff', 'lead'].includes(userRole)) {
+      toast.error("You don't have permission to approve requests.");
+      return;
+    }
     try {
       console.log("Attempting to approve request with ID:", requestId);
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -205,6 +209,10 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
   };
 
   const handleRejectRequest = async (requestId: string) => {
+    if (!['admin', 'staff', 'lead'].includes(userRole)) {
+      toast.error("You don't have permission to reject requests.");
+      return;
+    }
     try {
       const { error } = await supabase
         .from("cluster_members")

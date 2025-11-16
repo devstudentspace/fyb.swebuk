@@ -19,6 +19,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MoreHorizontal, Edit, Trash2, Users, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -62,7 +72,9 @@ export function ClusterTable({ userRole, onClusterUpdated }: ClusterTableProps) 
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
+  const [clusterToDelete, setClusterToDelete] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -134,16 +146,19 @@ export function ClusterTable({ userRole, onClusterUpdated }: ClusterTableProps) 
     }
   };
 
-  const handleDeleteCluster = async (clusterId: string) => {
-    if (!confirm("Are you sure you want to delete this cluster? This action cannot be undone.")) {
-      return;
-    }
+  const handleDeleteClick = (clusterId: string) => {
+    setClusterToDelete(clusterId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clusterToDelete) return;
 
     try {
       const { error } = await supabase
         .from("clusters")
         .delete()
-        .eq("id", clusterId);
+        .eq("id", clusterToDelete);
 
       if (error) throw error;
 
@@ -153,6 +168,9 @@ export function ClusterTable({ userRole, onClusterUpdated }: ClusterTableProps) 
     } catch (error: any) {
       console.error("Error deleting cluster:", error);
       toast.error(error.message || "Failed to delete cluster");
+    } finally {
+      setClusterToDelete(null);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -268,7 +286,7 @@ export function ClusterTable({ userRole, onClusterUpdated }: ClusterTableProps) 
                           </DropdownMenuItem>
                           {userRole === "admin" && (
                             <DropdownMenuItem
-                              onClick={() => handleDeleteCluster(cluster.id)}
+                              onClick={() => handleDeleteClick(cluster.id)}
                               className="text-destructive"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
@@ -308,6 +326,23 @@ export function ClusterTable({ userRole, onClusterUpdated }: ClusterTableProps) 
           />
         </>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the cluster and all of its associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

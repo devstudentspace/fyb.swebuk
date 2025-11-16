@@ -25,6 +25,16 @@ import {
 } from "@/components/ui/table";
 import { MoreHorizontal, UserPlus, UserMinus, Crown, Shield, Users, X } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -97,6 +107,8 @@ export function ClusterMembersDialog({
   const [pendingStaffAdditions, setPendingStaffAdditions] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(true);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -277,17 +289,20 @@ export function ClusterMembersDialog({
     }
   };
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this member from the cluster?")) {
-      return;
-    }
+  const handleRemoveClick = (memberId: string) => {
+    setMemberToRemove(memberId);
+    setRemoveDialogOpen(true);
+  };
+
+  const confirmRemove = async () => {
+    if (!memberToRemove) return;
 
     setLoading(true);
     try {
       const { error } = await supabase
         .from("cluster_members")
         .delete()
-        .eq("id", memberId);
+        .eq("id", memberToRemove);
 
       if (error) throw error;
 
@@ -299,6 +314,8 @@ export function ClusterMembersDialog({
       toast.error(error.message || "Failed to remove member");
     } finally {
       setLoading(false);
+      setMemberToRemove(null);
+      setRemoveDialogOpen(false);
     }
   };
 
@@ -530,7 +547,7 @@ export function ClusterMembersDialog({
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => handleRemoveMember(member.id)}
+                                  onClick={() => handleRemoveClick(member.id)}
                                   className="text-destructive"
                                 >
                                   <UserMinus className="mr-2 h-4 w-4" />
@@ -555,6 +572,22 @@ export function ClusterMembersDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will remove the member from the cluster. They will need to request to join again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove} className="bg-destructive hover:bg-destructive/90">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

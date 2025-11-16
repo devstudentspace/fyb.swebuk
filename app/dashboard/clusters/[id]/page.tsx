@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import {
   Users,
   Crown,
   Shield,
@@ -78,6 +89,8 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
   const [isMember, setIsMember] = useState(false);
   const [userMembershipStatus, setUserMembershipStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,7 +149,11 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
     fetchData();
   }, [params]);
 
-  const handleJoinCluster = async () => {
+  const handleJoinClick = () => {
+    setJoinDialogOpen(true);
+  };
+
+  const confirmJoin = async () => {
     if (!user) {
       router.push("/auth/login");
       return;
@@ -147,45 +164,49 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
       const { error } = await supabase
         .from("cluster_members")
         .insert({
-          cluster_id: cluster.id,
+          cluster_id: cluster!.id,
           user_id: user.id,
           status: "pending",
         });
 
       if (error) {
         if (error.code === "23505") { // Unique constraint violation
-          alert("You have already requested to join this cluster.");
+          toast.error("You have already requested to join this cluster.");
         } else {
           throw error;
         }
       } else {
-        alert("Request to join cluster sent! Wait for approval.");
+        toast.success("Request to join cluster sent! Wait for approval.");
         // Update membership status
         setIsMember(true);
         setUserMembershipStatus("pending");
       }
     } catch (error: any) {
       console.error("Error joining cluster:", error);
-      alert("Failed to join cluster: " + error.message);
+      toast.error("Failed to join cluster: " + error.message);
+    } finally {
+      setJoinDialogOpen(false);
     }
   };
 
-  const handleLeaveCluster = async () => {
-    if (!user || !window.confirm("Are you sure you want to leave this cluster?")) {
-      return;
-    }
+  const handleLeaveClick = () => {
+    setLeaveDialogOpen(true);
+  };
+
+  const confirmLeave = async () => {
+    if (!user) return;
 
     try {
       const supabase = createClient();
       const { error } = await supabase
         .from("cluster_members")
         .delete()
-        .eq("cluster_id", cluster.id)
+        .eq("cluster_id", cluster!.id)
         .eq("user_id", user.id);
 
       if (error) throw error;
 
-      alert("Successfully left the cluster");
+      toast.success("Successfully left the cluster");
       // Update membership status
       setIsMember(false);
       setUserMembershipStatus(null);
@@ -193,7 +214,9 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
       router.refresh ? router.refresh() : window.location.reload();
     } catch (error: any) {
       console.error("Error leaving cluster:", error);
-      alert("Failed to leave cluster: " + error.message);
+      toast.error("Failed to leave cluster: " + error.message);
+    } finally {
+      setLeaveDialogOpen(false);
     }
   };
 
@@ -257,7 +280,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
           <p className="text-muted-foreground mt-2">{cluster.description || "No description provided."}</p>
         </div>
         <div className="flex gap-2">
-          {canManage && (
+          {(userRole === 'admin' || userRole === 'staff') && (
             <Button variant="outline" asChild>
               <a href={`/dashboard/clusters/${cluster.id}/settings`}>
                 <Settings className="mr-2 h-4 w-4" />
@@ -266,18 +289,18 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
             </Button>
           )}
           {!isMember && userRole === 'student' && (
-            <Button onClick={handleJoinCluster}>
+            <Button onClick={handleJoinClick}>
               <Plus className="mr-2 h-4 w-4" />
               Join Cluster
             </Button>
           )}
           {isMember && userMembershipStatus === "pending" && (
-            <Button variant="outline" onClick={handleLeaveCluster}>
+            <Button variant="outline" onClick={handleLeaveClick}>
               Cancel Request
             </Button>
           )}
           {isMember && userMembershipStatus === "approved" && (
-            <Button variant="outline" onClick={handleLeaveCluster}>
+            <Button variant="outline" onClick={handleLeaveClick}>
               Leave Cluster
             </Button>
           )}
@@ -434,6 +457,40 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
           </TabsContent>
         </Tabs>
       </div>
+
+      <AlertDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request to Join Cluster?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A request will be sent to the cluster leaders for approval. You will be notified once your request has been reviewed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmJoin}>
+              Send Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will remove you from the cluster. If you have a pending request, it will be cancelled.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90">
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

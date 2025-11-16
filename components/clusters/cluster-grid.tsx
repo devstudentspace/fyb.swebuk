@@ -9,6 +9,16 @@ import { getDetailedClusters } from "@/lib/supabase/admin-actions";
 import { EditClusterDialog } from "./edit-cluster-dialog";
 import { ClusterMembersDialog } from "./cluster-members-dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -52,7 +62,13 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [selectedCluster, setSelectedCluster] = useState<DetailedCluster | null>(null);
+  const [clusterToDelete, setClusterToDelete] = useState<string | null>(null);
+  const [clusterToLeave, setClusterToLeave] = useState<string | null>(null);
+  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [clusterToJoin, setClusterToJoin] = useState<string | null>(null);
 
   const supabase = createClient(); // For client-side operations like delete
 
@@ -108,16 +124,19 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     }
   }, [searchTerm, filterStatus, showJoinButton, userId]);
 
-  const handleDeleteCluster = async (clusterId: string) => {
-    if (!confirm("Are you sure you want to delete this cluster? This action cannot be undone.")) {
-      return;
-    }
+  const handleDeleteClick = (clusterId: string) => {
+    setClusterToDelete(clusterId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!clusterToDelete) return;
 
     try {
       const { error } = await supabase
         .from("clusters")
         .delete()
-        .eq("id", clusterId);
+        .eq("id", clusterToDelete);
 
       if (error) throw error;
 
@@ -126,6 +145,9 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     } catch (error: any) {
       console.error("Error deleting cluster:", error);
       toast.error(error.message || "Failed to delete cluster");
+    } finally {
+      setClusterToDelete(null);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -139,7 +161,14 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     setMembersDialogOpen(true);
   };
 
-  const handleJoinCluster = async (clusterId: string) => {
+  const handleJoinClick = (clusterId: string) => {
+    setClusterToJoin(clusterId);
+    setJoinDialogOpen(true);
+  };
+
+  const confirmJoin = async () => {
+    if (!clusterToJoin) return;
+
     if (!userId) {
       toast.error("You must be logged in to join a cluster.");
       return;
@@ -149,7 +178,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
       const { error } = await supabase
         .from("cluster_members")
         .insert({
-          cluster_id: clusterId,
+          cluster_id: clusterToJoin,
           user_id: userId,
           status: "pending",
         });
@@ -167,13 +196,19 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     } catch (error: any) {
       console.error("Error joining cluster:", error);
       toast.error(error.message || "Failed to join cluster.");
+    } finally {
+      setClusterToJoin(null);
+      setJoinDialogOpen(false);
     }
   };
 
-  const handleLeaveCluster = async (clusterId: string) => {
-    if (!confirm("Are you sure you want to leave this cluster?")) {
-      return;
-    }
+  const handleLeaveClick = (clusterId: string) => {
+    setClusterToLeave(clusterId);
+    setLeaveDialogOpen(true);
+  };
+
+  const confirmLeave = async () => {
+    if (!clusterToLeave) return;
 
     if (!userId) {
       toast.error("You must be logged in to leave a cluster.");
@@ -184,7 +219,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
       const { error } = await supabase
         .from("cluster_members")
         .delete()
-        .eq("cluster_id", clusterId)
+        .eq("cluster_id", clusterToLeave)
         .eq("user_id", userId);
 
       if (error) throw error;
@@ -194,6 +229,9 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     } catch (error: any) {
       console.error("Error leaving cluster:", error);
       toast.error(error.message || "Failed to leave cluster");
+    } finally {
+      setClusterToLeave(null);
+      setLeaveDialogOpen(false);
     }
   };
 
@@ -304,7 +342,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                               className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/20 h-7 px-2 text-xs"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleLeaveCluster(cluster.id);
+                                handleLeaveClick(cluster.id);
                               }}
                             >
                               <LogOut className="h-3 w-3" />
@@ -332,7 +370,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                             className="bg-green-600 hover:bg-green-700 text-white h-7 px-2 text-xs"
                             onClick={(e) => {
                               e.preventDefault();
-                              handleJoinCluster(cluster.id);
+                              handleJoinClick(cluster.id);
                             }}
                           >
                             <UserPlus className="h-3 w-3" />
@@ -357,7 +395,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.preventDefault(); // Prevent navigation when clicking menu items
-                              handleLeaveCluster(cluster.id);
+                              handleLeaveClick(cluster.id);
                             }}
                             className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
                           >
@@ -394,7 +432,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.preventDefault(); // Prevent navigation when clicking menu items
-                              handleDeleteCluster(cluster.id);
+                              handleDeleteClick(cluster.id);
                             }}
                             className="text-destructive focus:text-destructive/80"
                           >
@@ -430,6 +468,57 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
           />
         </>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the cluster and all of its associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be removed from this cluster and will lose access to its resources. You can request to join again later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90">
+              Leave
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request to Join Cluster?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A request will be sent to the cluster leaders for approval. You will be notified once your request has been reviewed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmJoin}>
+              Send Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

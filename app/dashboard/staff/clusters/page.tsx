@@ -95,7 +95,7 @@ export default function StaffClustersPage() {
           </p>
         </div>
         <CreateClusterDialog onClusterCreated={() => window.location.reload()}>
-          <Button>
+          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
             <Plus className="mr-2 h-4 w-4" />
             Create Cluster
           </Button>
@@ -104,23 +104,43 @@ export default function StaffClustersPage() {
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500" />
           <Input
-            placeholder="Search clusters..."
-            className="pl-9"
+            placeholder="Search clusters by name, staff, or leaders..."
+            className="pl-9 border-blue-200 focus:border-blue-400 focus:ring-blue-100 dark:border-blue-800 dark:focus:border-blue-600 dark:focus:ring-blue-900/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[200px] border-blue-200 focus:border-blue-400 focus:ring-blue-100 dark:border-blue-800 dark:focus:border-blue-600 dark:focus:ring-blue-900/20">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
+            <SelectItem value="all" className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-500"></div>
+                All Statuses
+              </div>
+            </SelectItem>
+            <SelectItem value="active" className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                Active
+              </div>
+            </SelectItem>
+            <SelectItem value="inactive" className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                Inactive
+              </div>
+            </SelectItem>
+            <SelectItem value="archived" className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                Archived
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>

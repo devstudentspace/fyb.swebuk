@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox"; // Import Combobox
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Users, Crown, Shield, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -207,39 +207,49 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Cluster</DialogTitle>
-          <DialogDescription>
-            Create a new cluster and assign staff and student leaders.
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+              <Users className="h-5 w-5" />
+            </div>
+            Create New Cluster
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            Create a new cluster and assign staff and student leaders to build your community.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Cluster Name</Label>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-3">
+              <Label htmlFor="name" className="text-sm font-semibold text-foreground">Cluster Name</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter cluster name"
+                className="border-2 focus:border-primary focus:ring-primary/20"
                 required
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-foreground">Description</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the cluster's purpose and activities"
+                placeholder="Describe the cluster's purpose and activities..."
                 rows={3}
+                className="border-2 focus:border-primary focus:ring-primary/20 resize-none"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Staff Manager</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Shield className="h-4 w-4 text-blue-500" />
+                Staff Manager
+              </Label>
               <Combobox
                 options={staff.filter(user => user.full_name).map((user) => ({ value: user.id, label: `${user.full_name} (${user.role})` }))}
                 value={staffManagerId}
@@ -250,8 +260,11 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Lead Student</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Crown className="h-4 w-4 text-amber-500" />
+                Lead Student
+              </Label>
               <Combobox
                 options={students.filter(user => user.full_name).map((user) => ({ value: user.id, label: user.full_name }))}
                 value={leadStudentId}
@@ -262,8 +275,11 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Deputy Lead Student</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Users className="h-4 w-4 text-purple-500" />
+                Deputy Lead Student
+              </Label>
               <Combobox
                 options={students
                   .filter(student => student.id !== leadStudentId && student.full_name)
@@ -276,8 +292,11 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Additional Members</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <UserPlus className="h-4 w-4 text-green-500" />
+                Additional Members
+              </Label>
               <Combobox
                 options={students
                   .filter(student =>
@@ -295,14 +314,15 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
               />
 
               {additionalMembers.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-3 p-3 bg-muted/50 rounded-lg">
+                  <span className="text-sm font-medium text-muted-foreground w-full mb-2">Selected Members:</span>
                   {additionalMembers.map((userId) => (
-                    <Badge key={userId} variant="secondary" className="flex items-center gap-1">
+                    <Badge key={userId} variant="secondary" className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border-blue-200 dark:border-blue-700">
                       {getUserName(userId)}
                       <button
                         type="button"
                         onClick={() => handleRemoveMember(userId)}
-                        className="ml-1 hover:text-destructive"
+                        className="ml-1 hover:text-red-600 hover:bg-red-100 dark:hover:text-red-400 dark:hover:bg-red-900/20 rounded-full p-0.5 transition-colors"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -313,11 +333,20 @@ export function CreateClusterDialog({ children, onClusterCreated }: CreateCluste
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <DialogFooter className="pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="border-2 hover:bg-muted"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+            >
               {loading ? "Creating..." : "Create Cluster"}
             </Button>
           </DialogFooter>

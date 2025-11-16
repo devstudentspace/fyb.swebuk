@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox"; // Import Combobox
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { Edit, Users, Crown, Shield } from "lucide-react";
 
 interface User {
   id: string;
@@ -237,39 +238,49 @@ export function EditClusterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Edit Cluster</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white">
+              <Edit className="h-5 w-5" />
+            </div>
+            Edit Cluster
+          </DialogTitle>
+          <DialogDescription className="text-base">
             Update cluster information and leadership assignments.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Cluster Name</Label>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-3">
+              <Label htmlFor="name" className="text-sm font-semibold text-foreground">Cluster Name</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter cluster name"
+                className="border-2 focus:border-primary focus:ring-primary/20"
                 required
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+            <div className="grid gap-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-foreground">Description</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe the cluster's purpose and activities"
+                placeholder="Describe the cluster's purpose and activities..."
                 rows={3}
+                className="border-2 focus:border-primary focus:ring-primary/20 resize-none"
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Staff Manager</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Shield className="h-4 w-4 text-blue-500" />
+                Staff Manager
+              </Label>
               <Combobox
                 options={staff.filter(user => user.full_name).map((user) => ({ value: user.id, label: `${user.full_name} (${user.role})` }))}
                 value={staffManagerId}
@@ -280,8 +291,11 @@ export function EditClusterDialog({
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Lead Student</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Crown className="h-4 w-4 text-amber-500" />
+                Lead Student
+              </Label>
               <Combobox
                 options={students.filter(user => user.full_name).map((user) => ({ value: user.id, label: user.full_name }))}
                 value={leadStudentId}
@@ -292,8 +306,11 @@ export function EditClusterDialog({
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label>Deputy Lead Student</Label>
+            <div className="grid gap-3">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Users className="h-4 w-4 text-purple-500" />
+                Deputy Lead Student
+              </Label>
               <Combobox
                 options={students
                   .filter(student => student.id !== leadStudentId && student.full_name)
@@ -307,11 +324,20 @@ export function EditClusterDialog({
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="border-2 hover:bg-muted"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg"
+            >
               {loading ? "Updating..." : "Update Cluster"}
             </Button>
           </DialogFooter>

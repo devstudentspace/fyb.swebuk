@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Crown, Shield, Users, Check, X, Settings } from "lucide-react";
 
 interface DetailedCluster {
   id: string;
@@ -67,6 +68,15 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Leadership management states
+  const [showLeadDialog, setShowLeadDialog] = useState(false);
+  const [showDeputyDialog, setShowDeputyDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [selectedLead, setSelectedLead] = useState("");
+  const [selectedDeputy, setSelectedDeputy] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState("");
+  const [updatingRole, setUpdatingRole] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -134,22 +144,22 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
         
         // Fetch all users who could be assigned to leadership positions
         const { data, error } = await supabase
-          .from("profiles")
-          .select(`
-            id,
-            full_name,
-            email,
-            role
-          `)
-          .in("role", ["student", "staff"]) // Only students and staff can be leaders
-          .neq("id", cluster.lead_id) // Exclude current lead
-          .neq("id", cluster.deputy_id) // Exclude current deputy
-          .neq("id", cluster.staff_manager_id); // Exclude current staff manager
+          .from("public_profiles_with_email")
+          .select("id, full_name, email, role")
+          .in("role", ["student", "staff"]); // Only students and staff can be leaders
 
         if (error) throw error;
 
+        // Filter out current leaders on the client side
+        const filteredUsers = (data || []).filter(
+          (user) =>
+            user.id !== cluster.lead_id &&
+            user.id !== cluster.deputy_id &&
+            user.id !== cluster.staff_manager_id
+        );
+
         setAllUsers(data || []);
-        setAvailableUsers(data || []);
+        setAvailableUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
         toast.error("Failed to load users");
@@ -174,6 +184,90 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Leadership management functions
+  const handleLeadershipChange = async (role: string, newUserId: string) => {
+    if (!cluster || !user) return;
+
+    try {
+      setUpdatingRole(role);
+      const supabase = createClient();
+
+      // Update cluster table
+      const updateData: any = {};
+      if (role === 'lead') updateData.lead_id = newUserId || null;
+      if (role === 'deputy') updateData.deputy_id = newUserId || null;
+      if (role === 'staff') updateData.staff_manager_id = newUserId || null;
+
+      const { error: clusterError } = await supabase
+        .from("clusters")
+        .update(updateData)
+        .eq("id", cluster.id);
+
+      if (clusterError) throw clusterError;
+
+      // Update cluster_members table
+      if (newUserId) {
+        // Add new person to role
+        const { error: memberError } = await supabase
+          .from("cluster_members")
+          .upsert({
+            cluster_id: cluster.id,
+            user_id: newUserId,
+            role: role === 'staff' ? 'staff_manager' : role,
+            status: "approved",
+            approved_at: new Date().toISOString(),
+            approved_by: user.id
+          }, {
+            onConflict: "cluster_id, user_id"
+          });
+
+        if (memberError) throw memberError;
+      }
+
+      // If changing role, remove old person from leadership role
+      const oldUserId = role === 'lead' ? cluster.lead_id :
+                        role === 'deputy' ? cluster.deputy_id :
+                        cluster.staff_manager_id;
+
+      if (oldUserId && oldUserId !== newUserId) {
+        const { error: removeError } = await supabase
+          .from("cluster_members")
+          .delete()
+          .eq("cluster_id", cluster.id)
+          .eq("user_id", oldUserId);
+
+        if (removeError) throw removeError;
+      }
+
+      toast.success(`${role.charAt(0).toUpperCase() + role.slice(1)} updated successfully`);
+
+      // Update local state
+      setCluster(prev => prev ? {
+        ...prev,
+        lead_id: role === 'lead' ? (newUserId || null) : prev.lead_id,
+        lead_name: role === 'lead' ? (allUsers.find(u => u.id === newUserId)?.full_name || null) : prev.lead_name,
+        lead_email: role === 'lead' ? (allUsers.find(u => u.id === newUserId)?.email || null) : prev.lead_email,
+        deputy_id: role === 'deputy' ? (newUserId || null) : prev.deputy_id,
+        deputy_name: role === 'deputy' ? (allUsers.find(u => u.id === newUserId)?.full_name || null) : prev.deputy_name,
+        deputy_email: role === 'deputy' ? (allUsers.find(u => u.id === newUserId)?.email || null) : prev.deputy_email,
+        staff_manager_id: role === 'staff' ? (newUserId || null) : prev.staff_manager_id,
+        staff_manager_name: role === 'staff' ? (allUsers.find(u => u.id === newUserId)?.full_name || null) : prev.staff_manager_name,
+        staff_manager_email: role === 'staff' ? (allUsers.find(u => u.id === newUserId)?.email || null) : prev.staff_manager_email,
+      } : null);
+
+      // Close dialog and reset
+      if (role === 'lead') { setShowLeadDialog(false); setSelectedLead(""); }
+      if (role === 'deputy') { setShowDeputyDialog(false); setSelectedDeputy(""); }
+      if (role === 'staff') { setShowStaffDialog(false); setSelectedStaff(""); }
+
+    } catch (error: any) {
+      console.error(`Error updating ${role}:`, error);
+      toast.error(`Failed to update ${role}: ${error.message}`);
+    } finally {
+      setUpdatingRole("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,9 +353,14 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cluster Settings</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+              <Settings className="h-5 w-5" />
+            </div>
+            Cluster Settings
+          </h1>
           <p className="text-muted-foreground">
-            Manage settings for {cluster.name}
+            Manage settings and leadership for {cluster.name}
           </p>
         </div>
       </div>
@@ -273,51 +372,67 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Cluster Name</Label>
+            <div className="space-y-3">
+              <Label htmlFor="name" className="text-sm font-semibold text-foreground">Cluster Name</Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                className="border-2 focus:border-primary focus:ring-primary/20"
                 required
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+
+            <div className="space-y-3">
+              <Label htmlFor="description" className="text-sm font-semibold text-foreground">Description</Label>
               <Textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Describe what this cluster focuses on..."
+                className="border-2 focus:border-primary focus:ring-primary/20 resize-none"
+                rows={4}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+
+            <div className="space-y-3">
+              <Label htmlFor="status" className="text-sm font-semibold text-foreground">Status</Label>
               <Select value={formData.status} onValueChange={(value) => handleSelectChange('status', value)}>
-                <SelectTrigger>
+                <SelectTrigger className="border-2 focus:border-primary focus:ring-primary/20">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
+                  <SelectItem value="active" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    Active
+                  </SelectItem>
+                  <SelectItem value="inactive" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    Inactive
+                  </SelectItem>
+                  <SelectItem value="archived" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                    Archived
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="flex justify-end gap-4">
-              <Button 
-                type="button" 
+
+            <div className="flex justify-end gap-4 pt-4">
+              <Button
+                type="button"
                 variant="outline"
                 onClick={() => router.push(`/dashboard/clusters/${clusterId}`)}
+                className="border-2 hover:bg-muted"
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
+              >
                 Save Changes
               </Button>
             </div>
@@ -328,14 +443,17 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
       {/* Leadership Management Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Leadership</CardTitle>
-          <CardDescription>Manage the leadership team for this cluster</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Leadership Management
+          </CardTitle>
+          <CardDescription>Assign and manage leadership roles for this cluster</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-3 p-4 rounded-lg border-2 border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10">
               <h4 className="font-semibold flex items-center gap-2">
-                <span className="h-2 w-2 bg-primary rounded-full"></span>
+                <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 Lead Student
               </h4>
               <div className="flex items-center gap-2">
@@ -345,14 +463,19 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     {cluster.lead_email && <span className="text-muted-foreground block text-xs">{cluster.lead_email}</span>}
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Change
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setShowLeadDialog(true); }}
+                  className="border-amber-200 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950/20"
+                >
+                  {cluster.lead_name ? "Change" : "Assign"}
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3 p-4 rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10">
               <h4 className="font-semibold flex items-center gap-2">
-                <span className="h-2 w-2 bg-primary rounded-full"></span>
+                <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 Deputy Lead
               </h4>
               <div className="flex items-center gap-2">
@@ -362,14 +485,19 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     {cluster.deputy_email && <span className="text-muted-foreground block text-xs">{cluster.deputy_email}</span>}
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Change
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setShowDeputyDialog(true); }}
+                  className="border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-950/20"
+                >
+                  {cluster.deputy_name ? "Change" : "Assign"}
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3 p-4 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10">
               <h4 className="font-semibold flex items-center gap-2">
-                <span className="h-2 w-2 bg-primary rounded-full"></span>
+                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 Staff Manager
               </h4>
               <div className="flex items-center gap-2">
@@ -379,14 +507,191 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     {cluster.staff_manager_email && <span className="text-muted-foreground block text-xs">{cluster.staff_manager_email}</span>}
                   </p>
                 </div>
-                <Button variant="outline" size="sm">
-                  Change
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { setShowStaffDialog(true); }}
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/20"
+                >
+                  {cluster.staff_manager_name ? "Change" : "Assign"}
                 </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Leadership Assignment Dialogs */}
+      {/* Lead Student Dialog */}
+      {showLeadDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4 border-2 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                Assign Lead Student
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLeadDialog(false)}
+                className="hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Select Lead Student</Label>
+                <Select value={selectedLead} onValueChange={setSelectedLead}>
+                  <SelectTrigger className="border-amber-200 focus:border-amber-400 focus:ring-amber-100">
+                    <SelectValue placeholder="Choose a student..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers
+                      .filter(user => user.role === 'student')
+                      .map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name} ({user.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowLeadDialog(false)}
+                className="border-2 hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleLeadershipChange('lead', selectedLead)}
+                disabled={!selectedLead || updatingRole === 'lead'}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {updatingRole === 'lead' ? 'Assigning...' : 'Assign Lead'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deputy Lead Dialog */}
+      {showDeputyDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4 border-2 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                Assign Deputy Lead
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeputyDialog(false)}
+                className="hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Select Deputy Lead</Label>
+                <Select value={selectedDeputy} onValueChange={setSelectedDeputy}>
+                  <SelectTrigger className="border-purple-200 focus:border-purple-400 focus:ring-purple-100">
+                    <SelectValue placeholder="Choose a student..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers
+                      .filter(user => user.role === 'student')
+                      .map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name} ({user.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeputyDialog(false)}
+                className="border-2 hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleLeadershipChange('deputy', selectedDeputy)}
+                disabled={!selectedDeputy || updatingRole === 'deputy'}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {updatingRole === 'deputy' ? 'Assigning...' : 'Assign Deputy'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Manager Dialog */}
+      {showStaffDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4 border-2 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                Assign Staff Manager
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowStaffDialog(false)}
+                className="hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Select Staff Manager</Label>
+                <Select value={selectedStaff} onValueChange={setSelectedStaff}>
+                  <SelectTrigger className="border-blue-200 focus:border-blue-400 focus:ring-blue-100">
+                    <SelectValue placeholder="Choose a staff member..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allUsers
+                      .filter(user => user.role === 'staff')
+                      .map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.full_name} ({user.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowStaffDialog(false)}
+                className="border-2 hover:bg-muted"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleLeadershipChange('staff', selectedStaff)}
+                disabled={!selectedStaff || updatingRole === 'staff'}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {updatingRole === 'staff' ? 'Assigning...' : 'Assign Staff'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

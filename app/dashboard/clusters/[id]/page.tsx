@@ -289,7 +289,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{cluster.members_count}</div>
@@ -299,7 +299,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Created</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -313,7 +313,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Lead</CardTitle>
-            <Crown className="h-4 w-4 text-muted-foreground" />
+            <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold truncate max-w-[160px]">
@@ -327,7 +327,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Staff Manager</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
+            <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold truncate max-w-[160px]">
@@ -350,7 +350,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <h4 className="font-semibold flex items-center gap-2">
-                <Crown className="h-4 w-4 text-primary" />
+                <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 Lead Student
               </h4>
               <p className="text-sm text-muted-foreground">
@@ -362,7 +362,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
             </div>
             <div className="space-y-2">
               <h4 className="font-semibold flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 Deputy Lead
               </h4>
               <p className="text-sm text-muted-foreground">
@@ -374,7 +374,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
             </div>
             <div className="space-y-2">
               <h4 className="font-semibold flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" />
+                <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 Staff Manager
               </h4>
               <p className="text-sm text-muted-foreground">
@@ -393,10 +393,10 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Cluster Activities</h2>
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <Search className="h-4 w-4 text-blue-500" />
             <Input
               placeholder="Search activities..."
-              className="w-64"
+              className="w-64 border-blue-200 focus:border-blue-400 focus:ring-blue-100 dark:border-blue-800 dark:focus:border-blue-600 dark:focus:ring-blue-900/20"
             />
           </div>
         </div>
@@ -404,19 +404,19 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         <Tabs defaultValue="members" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="members" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               Members ({cluster.members_count})
             </TabsTrigger>
             <TabsTrigger value="projects" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               Projects
             </TabsTrigger>
             <TabsTrigger value="events" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
               Events
             </TabsTrigger>
             <TabsTrigger value="requests" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               Requests
             </TabsTrigger>
           </TabsList>

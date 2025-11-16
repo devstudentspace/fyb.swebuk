@@ -48,7 +48,7 @@ interface ClusterGridProps {
 
 export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJoinButton }: ClusterGridProps) {
   const [clusters, setClusters] = useState<DetailedCluster[]>([]);
-  const [userClusterIds, setUserClusterIds] = useState<string[]>([]);
+  const [userClusterStatuses, setUserClusterStatuses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
@@ -85,13 +85,18 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     if (userId) {
       const { data, error } = await supabase
         .from("cluster_members")
-        .select("cluster_id")
+        .select("cluster_id, status")
         .eq("user_id", userId);
 
       if (error) {
         console.error("Error fetching user clusters:", error);
       } else {
-        setUserClusterIds(data.map(item => item.cluster_id));
+        // Create a map of clusterId to status
+        const statuses: Record<string, string> = {};
+        data.forEach(item => {
+          statuses[item.cluster_id] = item.status;
+        });
+        setUserClusterStatuses(statuses);
       }
     }
   };
@@ -165,6 +170,33 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
     }
   };
 
+  const handleLeaveCluster = async (clusterId: string) => {
+    if (!confirm("Are you sure you want to leave this cluster?")) {
+      return;
+    }
+
+    if (!userId) {
+      toast.error("You must be logged in to leave a cluster.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("cluster_members")
+        .delete()
+        .eq("cluster_id", clusterId)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success("Successfully left the cluster");
+      fetchUserClusters(); // Re-fetch user clusters to update button state
+    } catch (error: any) {
+      console.error("Error leaving cluster:", error);
+      toast.error(error.message || "Failed to leave cluster");
+    }
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "active":
@@ -227,16 +259,60 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                     <span>{cluster.members_count} Members</span>
                   </div>
                   {showJoinButton && userRole === 'student' ? (
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault(); // Prevent navigation when clicking the join button
-                        handleJoinCluster(cluster.id);
-                      }}
-                      disabled={userClusterIds.includes(cluster.id)}
-                    >
-                      {userClusterIds.includes(cluster.id) ? "Request Sent" : "Join"}
-                    </Button>
+                    // For students, show different buttons based on their cluster status
+                    (() => {
+                      const userClusterStatus = userClusterStatuses[cluster.id];
+                      if (userClusterStatus === 'approved') {
+                        return (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.location.href = `/dashboard/clusters/${cluster.id}`;
+                              }}
+                            >
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleLeaveCluster(cluster.id);
+                              }}
+                            >
+                              Leave
+                            </Button>
+                          </div>
+                        );
+                      } else if (userClusterStatus === 'pending') {
+                        return (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              toast.info("Your request to join this cluster is pending approval.");
+                            }}
+                          >
+                            Request Sent
+                          </Button>
+                        );
+                      } else {
+                        return (
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleJoinCluster(cluster.id);
+                            }}
+                          >
+                            Join
+                          </Button>
+                        );
+                      }
+                    })()
                   ) : (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -250,6 +326,14 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {userRole === 'student' && userClusterStatuses[cluster.id] === 'approved' ? (
+                          <DropdownMenuItem onClick={(e) => {
+                            e.preventDefault(); // Prevent navigation when clicking menu items
+                            handleLeaveCluster(cluster.id);
+                          }}>
+                            Leave Cluster
+                          </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuItem onClick={(e) => {
                           e.preventDefault(); // Prevent navigation when clicking menu items
                           handleViewMembers(cluster);

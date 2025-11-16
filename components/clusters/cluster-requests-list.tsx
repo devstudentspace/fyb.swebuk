@@ -37,6 +37,7 @@ interface ClusterRequestsListProps {
 export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterRequestsListProps) {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const router = useRouter();
 
   const supabase = createClient();
@@ -45,6 +46,10 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
     const fetchRequests = async () => {
       try {
         setLoading(true);
+
+        // Get current user ID
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
 
         // First, fetch the cluster members with pending status
         let clusterMembersData: any[] = [];
@@ -166,29 +171,36 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
 
   const handleApproveRequest = async (requestId: string) => {
     try {
+      console.log("Attempting to approve request with ID:", requestId);
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         throw new Error("User not authenticated");
       }
 
-      const { error } = await supabase
+      const { error, status } = await supabase
         .from("cluster_members")
-        .update({ 
+        .update({
           status: "approved",
           approved_at: new Date().toISOString(),
           approved_by: user.id
         })
         .eq("id", requestId);
 
-      if (error) throw error;
+      console.log("Update operation result:", { error, status });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
 
       toast.success("Request approved successfully");
       // Refresh the requests list
       const updatedRequests = requests.filter(req => req.id !== requestId);
       setRequests(updatedRequests);
+      console.log("Approved request removed from UI");
     } catch (error: any) {
       console.error("Error approving request:", error);
-      toast.error("Failed to approve request");
+      toast.error("Failed to approve request: " + error.message);
     }
   };
 
@@ -208,6 +220,35 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
     } catch (error: any) {
       console.error("Error rejecting request:", error);
       toast.error("Failed to reject request");
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      console.log("Attempting to cancel request with ID:", requestId);
+
+      // Since users may not have permission to delete, update status to rejected instead
+      const { error, status } = await supabase
+        .from("cluster_members")
+        .update({ status: "rejected" })
+        .eq("id", requestId)
+        .eq("user_id", currentUserId); // Ensure user can only update their own request
+
+      console.log("Update operation result:", { error, status });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      toast.success("Request cancelled successfully");
+      // Remove the request from the list
+      const updatedRequests = requests.filter(req => req.id !== requestId);
+      setRequests(updatedRequests);
+      console.log("Request removed from UI");
+    } catch (error: any) {
+      console.error("Error cancelling request:", error);
+      toast.error("Failed to cancel request: " + error.message);
     }
   };
 
@@ -251,24 +292,37 @@ export function ClusterRequestsList({ clusterId, userRole, canManage }: ClusterR
                 </div>
               </div>
 
-              {canManage && (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleApproveRequest(request.id)}
+              <div className="flex items-center gap-2">
+                {canManage ? (
+                  // Show approve/reject buttons for managers
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleApproveRequest(request.id)}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRejectRequest(request.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  // For non-managers, show cancel button for their own request
+                  // (They only see their own pending requests based on filtering)
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleCancelRequest(request.id)}
                   >
-                    <Check className="h-4 w-4" />
+                    Cancel Request
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleRejectRequest(request.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))
         )}

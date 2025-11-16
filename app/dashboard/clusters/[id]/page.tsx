@@ -147,7 +147,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
       const { error } = await supabase
         .from("cluster_members")
         .insert({
-          cluster_id: clusterId,
+          cluster_id: cluster.id,
           user_id: user.id,
           status: "pending",
         });
@@ -167,6 +167,33 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
     } catch (error: any) {
       console.error("Error joining cluster:", error);
       alert("Failed to join cluster: " + error.message);
+    }
+  };
+
+  const handleLeaveCluster = async () => {
+    if (!user || !window.confirm("Are you sure you want to leave this cluster?")) {
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("cluster_members")
+        .delete()
+        .eq("cluster_id", cluster.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      alert("Successfully left the cluster");
+      // Update membership status
+      setIsMember(false);
+      setUserMembershipStatus(null);
+      // Refresh the page to update all data
+      router.refresh ? router.refresh() : window.location.reload();
+    } catch (error: any) {
+      console.error("Error leaving cluster:", error);
+      alert("Failed to leave cluster: " + error.message);
     }
   };
 
@@ -245,8 +272,13 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
             </Button>
           )}
           {isMember && userMembershipStatus === "pending" && (
-            <Button variant="outline" disabled>
-              Request Sent
+            <Button variant="outline" onClick={handleLeaveCluster}>
+              Cancel Request
+            </Button>
+          )}
+          {isMember && userMembershipStatus === "approved" && (
+            <Button variant="outline" onClick={handleLeaveCluster}>
+              Leave Cluster
             </Button>
           )}
         </div>

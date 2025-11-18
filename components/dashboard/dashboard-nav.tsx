@@ -217,7 +217,7 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
       />
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border/20 bg-card/60 backdrop-blur-sm transition-transform md:relative md:translate-x-0",
+          "gh-card fixed top-0 left-0 z-50 h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-[var(--color-neutral)]/20 transition-transform md:relative md:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

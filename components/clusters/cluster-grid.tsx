@@ -280,7 +280,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
           const canManage = userRole === 'admin' || userRole === 'staff';
           return (
             <Link href={`/dashboard/clusters/${cluster.id}`} key={cluster.id}>
-              <Card className="flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-emerald-500/20 group">
+              <Card className="gh-card flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-emerald-500/20 group hover:shadow-md">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between">
                     <span className="truncate hover:underline group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
@@ -397,7 +397,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                               e.preventDefault(); // Prevent navigation when clicking menu items
                               handleLeaveClick(cluster.id);
                             }}
-                            className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 h-7 px-2 text-xs"
                           >
                             <LogOut className="mr-2 h-4 w-4" />
                             Leave Cluster
@@ -408,8 +408,8 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                             e.preventDefault(); // Prevent navigation when clicking menu items
                             handleViewMembers(cluster);
                           }}
-                          className="text-sky-600 dark:text-sky-400 focus:text-sky-700 dark:focus:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/20"
-                        >
+                            className="text-sky-600 hover:text-sky-700 dark:text-sky-400 focus:text-sky-700 dark:focus:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/20 h-7 px-2 text-xs"
+                          >
                           <Users className="mr-2 h-4 w-4" />
                           View Members
                         </DropdownMenuItem>
@@ -421,7 +421,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                                 e.preventDefault(); // Prevent navigation when clicking menu items
                                 handleEditCluster(cluster);
                               }}
-                              className="text-amber-600 dark:text-amber-400 focus:text-amber-700 dark:focus:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                              className="text-amber-600 hover:text-amber-700 dark:text-amber-400 focus:text-amber-700 dark:focus:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20 h-7 px-2 text-xs"
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Cluster
@@ -434,7 +434,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                               e.preventDefault(); // Prevent navigation when clicking menu items
                               handleDeleteClick(cluster.id);
                             }}
-                            className="text-destructive focus:text-destructive/80 hover:bg-red-50 dark:hover:bg-red-950/20"
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 h-7 px-2 text-xs"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Cluster

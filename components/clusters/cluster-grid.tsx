@@ -251,9 +251,9 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800";
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
       case "inactive":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800";
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800";
       case "archived":
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400 border-gray-200 dark:border-gray-800";
       default:
@@ -280,10 +280,10 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
           const canManage = userRole === 'admin' || userRole === 'staff';
           return (
             <Link href={`/dashboard/clusters/${cluster.id}`} key={cluster.id}>
-              <Card className="flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-primary/20 group">
+              <Card className="flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer border hover:border-emerald-500/20 group">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between">
-                    <span className="truncate hover:underline group-hover:text-primary transition-colors">
+                    <span className="truncate hover:underline group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                       {cluster.name}
                     </span>
                     <Badge className={`${getStatusColor(cluster.status)} font-semibold`}>
@@ -296,7 +296,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                 </CardHeader>
                 <CardContent className="flex-grow space-y-3 text-sm">
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-                    <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <Shield className="h-4 w-4 text-sky-600 dark:text-sky-400" />
                     <span className="font-medium">Staff Manager:</span>
                     <span>{cluster.staff_manager_name || <Badge variant="outline" className="text-xs">N/A</Badge>}</span>
                   </div>
@@ -306,14 +306,14 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                     <span>{cluster.lead_name || <Badge variant="outline" className="text-xs">N/A</Badge>}</span>
                   </div>
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-                    <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                     <span className="font-medium">Deputy Lead:</span>
                     <span>{cluster.deputy_name || <Badge variant="outline" className="text-xs">N/A</Badge>}</span>
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center pt-3 border-t bg-muted/30">
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary">
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
                       <Users className="h-3 w-3" />
                       <span>{cluster.members_count}</span>
                     </div>
@@ -328,7 +328,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                           <div className="flex gap-1">
                             <Button
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white h-7 px-2 text-xs"
+                              className="bg-sky-600 hover:bg-sky-700 text-white h-7 px-2 text-xs"
                               onClick={(e) => {
                                 e.preventDefault();
                                 window.location.href = `/dashboard/clusters/${cluster.id}`;
@@ -367,7 +367,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                         return (
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white h-7 px-2 text-xs"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 px-2 text-xs"
                             onClick={(e) => {
                               e.preventDefault();
                               handleJoinClick(cluster.id);
@@ -397,7 +397,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                               e.preventDefault(); // Prevent navigation when clicking menu items
                               handleLeaveClick(cluster.id);
                             }}
-                            className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300"
+                            className="text-red-600 dark:text-red-400 focus:text-red-700 dark:focus:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/20"
                           >
                             <LogOut className="mr-2 h-4 w-4" />
                             Leave Cluster
@@ -408,7 +408,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                             e.preventDefault(); // Prevent navigation when clicking menu items
                             handleViewMembers(cluster);
                           }}
-                          className="text-blue-600 dark:text-blue-400 focus:text-blue-700 dark:focus:text-blue-300"
+                          className="text-sky-600 dark:text-sky-400 focus:text-sky-700 dark:focus:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/20"
                         >
                           <Users className="mr-2 h-4 w-4" />
                           View Members
@@ -421,7 +421,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                                 e.preventDefault(); // Prevent navigation when clicking menu items
                                 handleEditCluster(cluster);
                               }}
-                              className="text-amber-600 dark:text-amber-400 focus:text-amber-700 dark:focus:text-amber-300"
+                              className="text-amber-600 dark:text-amber-400 focus:text-amber-700 dark:focus:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20"
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Cluster
@@ -434,7 +434,7 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
                               e.preventDefault(); // Prevent navigation when clicking menu items
                               handleDeleteClick(cluster.id);
                             }}
-                            className="text-destructive focus:text-destructive/80"
+                            className="text-destructive focus:text-destructive/80 hover:bg-red-50 dark:hover:bg-red-950/20"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Cluster

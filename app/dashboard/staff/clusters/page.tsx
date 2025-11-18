@@ -107,16 +107,16 @@ export default function StaffClustersPage() {
       {/* Search and Filter Section */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
         <div className="relative flex-1 sm:flex-initial sm:flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
           <Input
             placeholder="Search clusters by name, staff, or leaders..."
-            className="pl-9 pr-4 py-2 w-full sm:w-full md:w-full lg:w-full border-blue-200 focus:border-blue-400 focus:ring-blue-100 dark:border-blue-800 dark:focus:border-blue-600 dark:focus:ring-blue-900/20 min-w-[200px]"
+            className="pl-9 pr-4 py-2 w-full sm:w-full md:w-full lg:w-full border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 dark:border-gray-700 dark:focus:border-emerald-400 dark:focus:ring-emerald-900/20 min-w-[200px]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-full sm:w-[200px] border-blue-200 focus:border-blue-400 focus:ring-blue-100 dark:border-blue-800 dark:focus:border-blue-600 dark:focus:ring-blue-900/20">
+          <SelectTrigger className="w-full sm:w-[200px] border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 dark:border-gray-700 dark:focus:border-emerald-400 dark:focus:ring-emerald-900/20">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
@@ -128,13 +128,13 @@ export default function StaffClustersPage() {
             </SelectItem>
             <SelectItem value="active" className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
                 Active
               </div>
             </SelectItem>
             <SelectItem value="inactive" className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div className="w-2 h-2 rounded-full bg-amber-600"></div>
                 Inactive
               </div>
             </SelectItem>

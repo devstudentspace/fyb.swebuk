@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,6 +82,7 @@ async function getUser() {
 
 export default function ClusterInfoPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [cluster, setCluster] = useState<DetailedCluster | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -424,7 +425,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
           </div>
         </div>
 
-        <Tabs defaultValue="members" className="w-full">
+        <Tabs defaultValue={searchParams.get("tab") || "members"} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="members" className="flex items-center gap-2">
               <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />

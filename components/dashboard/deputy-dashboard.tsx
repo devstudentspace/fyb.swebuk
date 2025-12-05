@@ -1,25 +1,123 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@supabase/supabase-js";
-import { Users, UserPlus, BookOpen, FileText } from "lucide-react";
+import { Users, UserPlus, BookOpen, FileText, Users2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 interface DeputyDashboardProps {
   user: User;
   fullName?: string; // Pass full name from profile
 }
 
+interface Cluster {
+  id: string;
+  name: string;
+  members_count: number;
+}
+
+interface Request {
+  id: string;
+  user_id: string;
+  user_name: string;
+  cluster_id: string;
+  cluster_name: string;
+  created_at: string;
+}
+
 export function DeputyDashboard({ user, fullName }: DeputyDashboardProps) {
-  const deputyMetrics = {
-    clusterMembers: 15,
-    pendingApplications: 3,
-    blogToReview: 2,
-    assistedProjects: 4,
-  };
+  const [deputyMetrics, setDeputyMetrics] = useState({
+    clusterMembers: 0,
+    pendingApplications: 0,
+    blogToReview: 0,
+    assistedProjects: 0,
+  });
+
+  const [myClusters, setMyClusters] = useState<Cluster[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Request[]>([]);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    const fetchDeputyData = async () => {
+      if (!user?.id) return;
+
+      // Fetch user clusters where they are deputy
+      const { data: userClusters, error: clustersError } = await supabase
+        .from('clusters')
+        .select('id, name')
+        .eq('deputy_id', user.id);
+
+      if (clustersError) {
+        console.error('Error fetching user clusters:', clustersError);
+      } else if (userClusters) {
+        setMyClusters(userClusters);
+
+        // Get cluster IDs to fetch related data
+        const clusterIds = userClusters.map(cluster => cluster.id);
+
+        if (clusterIds.length > 0) {
+          // Fetch member counts for each cluster
+          const { count: totalMembers, error: membersError } = await supabase
+            .from('cluster_members')
+            .select('*', { count: 'exact', head: true })
+            .in('cluster_id', clusterIds)
+            .eq('status', 'approved');
+
+          // Fetch pending requests for clusters
+          const { data: requests, error: requestsError } = await supabase
+            .from('cluster_members')
+            .select(`
+              id,
+              user_id,
+              profiles!cluster_members_user_id_fkey(full_name),
+              cluster_id,
+              clusters!cluster_members_cluster_id_fkey(name)
+            `)
+            .in('cluster_id', clusterIds)
+            .eq('status', 'pending');
+
+          if (membersError) {
+            console.error('Error fetching member counts:', membersError);
+          } else {
+            setDeputyMetrics(prev => ({
+              ...prev,
+              clusterMembers: totalMembers || 0
+            }));
+          }
+
+          if (requestsError) {
+            console.error('Error fetching pending requests:', requestsError);
+          } else if (requests) {
+            const formattedRequests = requests.map(req => ({
+              id: req.id,
+              user_id: req.user_id,
+              user_name: req.profiles?.full_name || 'Unknown User',
+              cluster_id: req.cluster_id,
+              cluster_name: req.clusters?.name || 'Unknown Cluster',
+              created_at: req.created_at
+            }));
+
+            setPendingRequests(formattedRequests);
+            setDeputyMetrics(prev => ({
+              ...prev,
+              pendingApplications: formattedRequests.length
+            }));
+          }
+        }
+      }
+    };
+
+    fetchDeputyData();
+  }, [user?.id, supabase]);
 
   const stats = [
+    { title: "My Clusters", value: myClusters.length, icon: Users2, iconBg: "bg-blue-100 text-blue-600" },
     { title: "Cluster Members", value: deputyMetrics.clusterMembers, icon: Users, iconBg: "bg-blue-100 text-blue-600" },
-    { title: "Pending Applications", value: deputyMetrics.pendingApplications, icon: UserPlus, iconBg: "bg-green-100 text-green-600" },
+    { title: "Pending Applications", value: deputyMetrics.pendingApplications, icon: UserPlus, iconBg: "bg-amber-100 text-amber-600" },
     { title: "Blog Reviews", value: deputyMetrics.blogToReview, icon: BookOpen, iconBg: "bg-purple-100 text-purple-600" },
-    { title: "Assisted Projects", value: deputyMetrics.assistedProjects, icon: FileText, iconBg: "bg-orange-100 text-orange-600" },
   ];
 
   return (
@@ -27,7 +125,7 @@ export function DeputyDashboard({ user, fullName }: DeputyDashboardProps) {
       {/* Welcome Header */}
       <div>
         <h1 className="text-3xl font-semibold text-foreground">Welcome back, Deputy {fullName || user.email}!</h1>
-        <p className="mt-1 text-muted-foreground">Here's what's happening in your cluster today.</p>
+        <p className="mt-1 text-muted-foreground">Here's what's happening in your clusters today.</p>
       </div>
 
       {/* Stats Cards */}
@@ -48,6 +146,73 @@ export function DeputyDashboard({ user, fullName }: DeputyDashboardProps) {
             </Card>
           );
         })}
+      </div>
+
+      {/* Deputy-specific sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* My Clusters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users2 className="h-5 w-5 text-blue-600" />
+              My Clusters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {myClusters.length > 0 ? (
+              <div className="space-y-3">
+                {myClusters.map((cluster) => (
+                  <div key={cluster.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{cluster.name}</h4>
+                      <p className="text-sm text-muted-foreground">{cluster.members_count} members</p>
+                    </div>
+                    <Link
+                      href={`/dashboard/clusters/${cluster.id}`}
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      Manage
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">You are not assigned as a deputy to any clusters yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Pending Requests */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-amber-600" />
+              Pending Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {pendingRequests.length > 0 ? (
+              <div className="space-y-3">
+                {pendingRequests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{request.user_name}</h4>
+                      <p className="text-sm text-muted-foreground">Requested to join {request.cluster_name}</p>
+                    </div>
+                    <Link
+                      href={`/dashboard/clusters/${request.cluster_id}?tab=requests`}
+                      className="text-sm font-medium text-amber-600 hover:underline"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No pending requests to review.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

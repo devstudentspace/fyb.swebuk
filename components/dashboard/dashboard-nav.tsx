@@ -112,10 +112,10 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
             { href: "/dashboard/lead", label: "Dashboard", icon: LayoutDashboard },
             { href: `/dashboard/lead/profile`, label: "My Profile", icon: Users },
           ],
-          // "My Teams": [
-          //   { href: "/dashboard/leads/teams", label: "My Teams", icon: Users2 }, // TODO: Create this page
-          //   { href: "/dashboard/leads/projects", label: "My Projects", icon: FolderCheck }, // TODO: Create this page
-          // ],
+          "Management": [
+            { href: "/dashboard/lead/clusters", label: "My Clusters", icon: Users2 },
+            // { href: "/dashboard/leads/projects", label: "My Projects", icon: FolderCheck }, // TODO: Create this page
+          ],
           "Community": [
             { href: "/dashboard/clusters", label: "All Clubs", icon: Users2 },
             // { href: "/dashboard/events", label: "Events", icon: Calendar }, // TODO: Create this page
@@ -129,10 +129,10 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
             { href: "/dashboard/deputy", label: "Dashboard", icon: LayoutDashboard },
             { href: `/dashboard/deputy/profile`, label: "My Profile", icon: Users },
           ],
-          // "My Responsibilities": [
-          //   { href: "/dashboard/deputies/tasks", label: "My Tasks", icon: FolderCheck }, // TODO: Create this page
-          //   { href: "/dashboard/deputies/teams", label: "My Teams", icon: Users2 }, // TODO: Create this page
-          // ],
+          "Management": [
+            { href: "/dashboard/deputy/clusters", label: "My Clusters", icon: Users2 },
+            // { href: "/dashboard/deputies/tasks", label: "My Tasks", icon: FolderCheck }, // TODO: Create this page
+          ],
           "Community": [
             { href: "/dashboard/clusters", label: "All Clubs", icon: Users2 },
             // { href: "/dashboard/events", label: "Events", icon: Calendar }, // TODO: Create this page

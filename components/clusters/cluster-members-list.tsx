@@ -56,7 +56,8 @@ export function ClusterMembersList({ clusterId, userRole, canManage }: ClusterMe
 
         if (error) {
           console.error("Error fetching cluster members:", error);
-          toast.error("Failed to load cluster members");
+          const errorMessage = error?.message || error?.toString() || "An unknown error occurred";
+          toast.error("Failed to load cluster members: " + errorMessage);
           return;
         }
 
@@ -79,7 +80,8 @@ export function ClusterMembersList({ clusterId, userRole, canManage }: ClusterMe
         }
       } catch (error: any) {
         console.error("Error fetching cluster members:", error);
-        toast.error("Failed to load cluster members");
+        const errorMessage = error?.message || error?.toString() || "An unknown error occurred";
+        toast.error("Failed to load cluster members: " + errorMessage);
       } finally {
         setLoading(false);
       }

@@ -5,7 +5,11 @@
       "Bash(npm install sonner)",
       "Bash(npm run build)",
       "Bash(cat -n C:UsersabdulHerdfyb.swebukcomponentslandingstats-section.tsx)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(npx supabase status)",
+      "Bash(npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

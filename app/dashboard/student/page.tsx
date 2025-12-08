@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StudentDashboard } from "@/components/dashboard/student-dashboard";
+import { getStudentDashboardStats, getRecentProjects, getPopularClusters } from "@/lib/supabase/dashboard-actions";
 
 export default async function StudentDashboardPage() {
   const supabase = await createClient();
@@ -19,6 +20,8 @@ export default async function StudentDashboardPage() {
 
   let userRole = 'student'; // default role
   let fullName = user.user_metadata?.full_name || user.email; // Fallback to user metadata or email
+  let academicLevel = user.user_metadata?.academic_level || 'student';
+
   if (error || !profileData) {
     console.error('Error fetching profile or profile not found:', error);
     // Fallback to user metadata if profile is not found
@@ -26,6 +29,7 @@ export default async function StudentDashboardPage() {
   } else {
     userRole = profileData.role || 'student';
     fullName = profileData.full_name || user.user_metadata?.full_name || user.email;
+    academicLevel = profileData.academic_level || 'student';
   }
 
   // Redirect if user is not a student
@@ -33,7 +37,19 @@ export default async function StudentDashboardPage() {
     redirect(`/dashboard/${userRole.toLowerCase()}`);
   }
 
+  // Fetch dashboard data
+  const stats = await getStudentDashboardStats(user.id);
+  const recentProjects = await getRecentProjects(user.id, 3);
+  const popularClusters = await getPopularClusters(4);
+
   return (
-    <StudentDashboard user={user} fullName={fullName} />
+    <StudentDashboard
+      user={user}
+      fullName={fullName}
+      academicLevel={academicLevel}
+      stats={stats}
+      recentProjects={recentProjects}
+      popularClusters={popularClusters}
+    />
   );
 }

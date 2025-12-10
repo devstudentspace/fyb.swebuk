@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, User, CheckCircle, Clock, FileText, AlertCircle } from "lucide-react";
 import { FYPComments } from "./fyp-comments";
+import { FYPFileUpload } from "./fyp-file-upload";
 
 interface FYP {
   id: string;
@@ -12,9 +13,9 @@ interface FYP {
   description: string;
   status: string;
   created_at: string;
+  student_id: string;
   supervisor?: {
     full_name: string;
-    email: string;
     avatar_url: string | null;
   } | null;
   proposal_url?: string;
@@ -90,6 +91,29 @@ export function FYPDetails({ fyp, comments }: FYPDetailsProps) {
             </Card>
           )}
 
+          {/* File Uploads - Only show if not completed or rejected */}
+          {fyp.status !== "completed" && fyp.status !== "rejected" && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Upload Documents</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FYPFileUpload
+                  fypId={fyp.id}
+                  studentId={fyp.student_id}
+                  documentType="proposal"
+                  currentFileUrl={fyp.proposal_url}
+                />
+                {(fyp.status === "in_progress" || fyp.status === "ready_for_review") && (
+                  <FYPFileUpload
+                    fypId={fyp.id}
+                    studentId={fyp.student_id}
+                    documentType="report"
+                    currentFileUrl={fyp.report_url}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           <FYPComments fypId={fyp.id} initialComments={comments} />
         </div>
 
@@ -108,7 +132,7 @@ export function FYPDetails({ fyp, comments }: FYPDetailsProps) {
                   </Avatar>
                   <div>
                     <p className="font-medium text-sm">{fyp.supervisor.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{fyp.supervisor.email}</p>
+                    <p className="text-xs text-muted-foreground">Project Supervisor</p>
                   </div>
                 </div>
               ) : (
@@ -126,25 +150,37 @@ export function FYPDetails({ fyp, comments }: FYPDetailsProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               {fyp.proposal_url ? (
-                <div className="flex items-center justify-between p-2 border rounded-md text-sm">
+                <a
+                  href={fyp.proposal_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-2 border rounded-md text-sm hover:bg-muted/50 transition-colors"
+                >
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-500" />
                     Proposal
                   </span>
-                  <Badge variant="outline">Uploaded</Badge>
-                </div>
+                  <Badge variant="outline">View</Badge>
+                </a>
               ) : (
                 <div className="text-sm text-muted-foreground italic">No proposal document uploaded.</div>
               )}
-              
-              {fyp.report_url && (
-                <div className="flex items-center justify-between p-2 border rounded-md text-sm">
+
+              {fyp.report_url ? (
+                <a
+                  href={fyp.report_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-2 border rounded-md text-sm hover:bg-muted/50 transition-colors"
+                >
                   <span className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-green-500" />
                     Final Report
                   </span>
-                  <Badge variant="outline">Uploaded</Badge>
-                </div>
+                  <Badge variant="outline">View</Badge>
+                </a>
+              ) : (
+                <div className="text-sm text-muted-foreground italic">No report uploaded yet.</div>
               )}
             </CardContent>
           </Card>

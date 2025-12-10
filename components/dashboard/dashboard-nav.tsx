@@ -28,15 +28,19 @@ import { getUserClusters } from "@/lib/supabase/user-actions";
 interface DashboardNavProps {
   userId: string; // Pass userId instead of full user object
   userProfileRole: string; // Pass role from profile
+  userAcademicLevel?: string; // Pass academic level for FYP access
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
 }
 
-export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSidebarOpen }: DashboardNavProps) {
+export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSidebarOpen, setIsSidebarOpen }: DashboardNavProps) {
   const pathname = usePathname();
   const userRole = userProfileRole || "student";
   const [userClusters, setUserClusters] = useState<any[]>([]);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
+
+  // Check if user is Level 400 for FYP access
+  const isLevel400 = userAcademicLevel === "400" || userAcademicLevel === "level_400";
 
   useEffect(() => {
     if (userRole === "student" && userId) {
@@ -49,12 +53,23 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
   }, [userId, userRole]);
 
   const getNavSections = () => {
+    const mainNavItems = [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: `/dashboard/student/profile`, label: "My Profile", icon: Users },
+      { href: "/dashboard/portfolio", label: "Portfolio", icon: FileText },
+    ];
+
+    // Add FYP link only for Level 400 students
+    if (isLevel400) {
+      mainNavItems.push({
+        href: "/dashboard/student/fyp",
+        label: "Final Year Project",
+        icon: FileText,
+      });
+    }
+
     const studentNav = {
-      "Main": [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: `/dashboard/student/profile`, label: "My Profile", icon: Users },
-        { href: "/dashboard/portfolio", label: "Portfolio", icon: FileText },
-      ],
+      "Main": mainNavItems,
       "Community": [
         { href: "/dashboard/clusters", label: "All Clubs", icon: Users2 },
         { href: "/dashboard/events", label: "Events", icon: Calendar },
@@ -77,6 +92,7 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
         { href: "/dashboard/admin/users", label: "Student Management", icon: Users },
         { href: "/dashboard/admin/staff", label: "Staff Management", icon: UserCog },
         { href: "/dashboard/admin/academic-sessions", label: "Academic Sessions", icon: CalendarCog },
+        { href: "/dashboard/admin/fyp", label: "FYP Supervision", icon: FileText },
       ],
       "Content": [
         { href: "/dashboard/admin/clusters", label: "Club Management", icon: Users2 },
@@ -105,6 +121,7 @@ export function DashboardNav({ userId, userProfileRole, isSidebarOpen, setIsSide
             { href: "/dashboard/staff/users", label: "Student Management", icon: Users },
             { href: "/dashboard/staff/staff", label: "Staff Management", icon: UserCog },
             { href: "/dashboard/staff/academic-sessions", label: "Academic Sessions", icon: CalendarCog },
+            { href: "/dashboard/staff/fyp", label: "FYP Supervision", icon: FileText },
           ],
           "Content": [
             { href: "/dashboard/staff/clusters", label: "Cluster Management", icon: Users2 },

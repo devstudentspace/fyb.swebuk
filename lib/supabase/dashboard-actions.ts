@@ -81,14 +81,18 @@ export async function getRecentProjects(userId: string, limit: number = 3) {
         .eq("status", "approved")
         .eq("project.status", "active")
         .order("joined_at", { ascending: false })
-        .limit(remainingLimit);
+        .limit(remainingLimit * 2); // Get more to account for potential duplicates
 
       if (!memberError && memberData) {
         memberProjects = memberData.map((item: any) => item.project);
       }
     }
 
-    const allProjects = [...(ownedProjects || []), ...memberProjects];
+    // Combine and remove duplicates based on project ID
+    const ownedProjectIds = new Set((ownedProjects || []).map(p => p.id));
+    const uniqueMemberProjects = memberProjects.filter(p => !ownedProjectIds.has(p.id));
+
+    const allProjects = [...(ownedProjects || []), ...uniqueMemberProjects].slice(0, limit);
 
     return allProjects.map((project) => ({
       id: project.id,

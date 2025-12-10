@@ -14,22 +14,23 @@ export default async function StudentDashboardPage() {
   // Fetch profile data from profiles table instead of user metadata
   const { data: profileData, error } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, academic_level')
     .eq('id', user.id)
     .single();
 
   let userRole = 'student'; // default role
   let fullName = user.user_metadata?.full_name || user.email; // Fallback to user metadata or email
-  let academicLevel = user.user_metadata?.academic_level || 'student';
+  let academicLevel = null;
 
   if (error || !profileData) {
     console.error('Error fetching profile or profile not found:', error);
     // Fallback to user metadata if profile is not found
     userRole = user.user_metadata?.role || "student";
+    academicLevel = user.user_metadata?.academic_level;
   } else {
     userRole = profileData.role || 'student';
     fullName = profileData.full_name || user.user_metadata?.full_name || user.email;
-    academicLevel = profileData.academic_level || 'student';
+    academicLevel = profileData.academic_level;
   }
 
   // Redirect if user is not a student

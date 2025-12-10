@@ -109,11 +109,17 @@ export async function GET() {
 
       // Update Profile with role and academic level
       // Note: Trigger creates profile, we update it.
-      await supabase.from('profiles').update({
+      const updateData: any = {
         role: u.role,
-        academic_level: u.academic_level || 'student',
         full_name: u.name
-      }).eq('id', data.user.id);
+      };
+
+      // Only set academic_level if it's explicitly provided
+      if (u.academic_level) {
+        updateData.academic_level = u.academic_level;
+      }
+
+      await supabase.from('profiles').update(updateData).eq('id', data.user.id);
     }
 
     // 2. Create Clusters

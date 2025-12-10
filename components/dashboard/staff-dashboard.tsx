@@ -22,7 +22,7 @@ export function StaffDashboard({ user, fullName }: StaffDashboardProps) {
       title: "FYP Supervision",
       description: "Manage final year projects",
       icon: GraduationCap,
-      href: "/fyp/supervision",
+      href: "/dashboard/staff/fyp",
       color: "bg-blue-500",
       badge: staffMetrics.pendingFyps,
     },

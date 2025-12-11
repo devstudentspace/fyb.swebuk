@@ -4,7 +4,19 @@
       "Bash(npx supabase db reset)",
       "Bash(npm install sonner)",
       "Bash(npm run build)",
-      "Bash(cat -n C:UsersabdulHerdfyb.swebukcomponentslandingstats-section.tsx)"
+      "Bash(cat -n C:UsersabdulHerdfyb.swebukcomponentslandingstats-section.tsx)",
+      "WebSearch",
+      "Bash(npx supabase status)",
+      "Bash(npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(supabase status:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

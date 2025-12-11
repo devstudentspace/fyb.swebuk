@@ -136,29 +136,44 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
   useEffect(() => {
     const fetchUsers = async () => {
       if (!userRole || !cluster) return;
-      
+
       try {
         setLoadingUsers(true);
-        
+
         const supabase = createClient();
-        
+
         // Fetch all users who could be assigned to leadership positions
-        const { data, error } = await supabase
+        const { data: allUsersData, error: allUsersError } = await supabase
           .from("public_profiles_with_email")
           .select("id, full_name, email, role")
           .in("role", ["student", "staff"]); // Only students and staff can be leaders
 
-        if (error) throw error;
+        if (allUsersError) throw allUsersError;
+
+        // Fetch only cluster members
+        const { data: clusterMembersData, error: clusterMembersError } = await supabase
+          .from("cluster_members")
+          .select("user_id")
+          .eq("cluster_id", cluster.id)
+          .eq("status", "approved"); // Only approved members
+
+        if (clusterMembersError) throw clusterMembersError;
+
+        // Get the list of user IDs who are cluster members
+        const clusterMemberIds = clusterMembersData.map(member => member.user_id);
+
+        // Filter to only include cluster members
+        const clusterMembers = allUsersData?.filter(user => clusterMemberIds.includes(user.id)) || [];
 
         // Filter out current leaders on the client side
-        const filteredUsers = (data || []).filter(
+        const filteredUsers = clusterMembers.filter(
           (user) =>
             user.id !== cluster.lead_id &&
             user.id !== cluster.deputy_id &&
             user.id !== cluster.staff_manager_id
         );
 
-        setAllUsers(data || []);
+        setAllUsers(allUsersData || []);
         setAvailableUsers(filteredUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -171,9 +186,9 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
     fetchUsers();
   }, [userRole, cluster]);
 
-  const canManage = userRole === 'admin' || 
-                   userRole === 'staff' || 
-                   cluster?.lead_id === user?.id || 
+  const canManage = userRole === 'admin' ||
+                   userRole === 'staff' ||
+                   cluster?.lead_id === user?.id ||
                    cluster?.deputy_id === user?.id ||
                    cluster?.staff_manager_id === user?.id;
 
@@ -274,6 +289,112 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
     }
   };
 
+  // Member management functions
+  const handleAddMember = async (userId: string) => {
+    if (!cluster || !user) return;
+
+    try {
+      setUpdatingRole(userId);
+      const supabase = createClient();
+
+      // Add user to cluster as a regular member
+      const { error } = await supabase
+        .from("cluster_members")
+        .insert({
+          cluster_id: cluster.id,
+          user_id: userId,
+          role: "member", // Default role for regular members
+          status: "approved",
+          approved_at: new Date().toISOString(),
+          approved_by: user.id
+        });
+
+      if (error) throw error;
+
+      toast.success("Member added successfully");
+
+      // Refresh the members list
+      const { data: clusterMembersData, error: clusterMembersError } = await supabase
+        .from("cluster_members")
+        .select("user_id")
+        .eq("cluster_id", cluster.id)
+        .eq("status", "approved");
+
+      if (clusterMembersError) throw clusterMembersError;
+
+      // Get the list of user IDs who are cluster members
+      const clusterMemberIds = clusterMembersData.map(member => member.user_id);
+
+      // Filter to only include cluster members
+      const clusterMembers = allUsers?.filter(user => clusterMemberIds.includes(user.id)) || [];
+
+      // Filter out current leaders on the client side
+      const filteredUsers = clusterMembers.filter(
+        (user) =>
+          user.id !== cluster.lead_id &&
+          user.id !== cluster.deputy_id &&
+          user.id !== cluster.staff_manager_id
+      );
+
+      setAvailableUsers(filteredUsers);
+    } catch (error: any) {
+      console.error("Error adding member:", error);
+      toast.error("Failed to add member: " + error.message);
+    } finally {
+      setUpdatingRole("");
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!cluster || !user) return;
+
+    try {
+      setUpdatingRole(userId);
+      const supabase = createClient();
+
+      // Remove user from cluster
+      const { error } = await supabase
+        .from("cluster_members")
+        .delete()
+        .eq("cluster_id", cluster.id)
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success("Member removed successfully");
+
+      // Refresh the members list
+      const { data: clusterMembersData, error: clusterMembersError } = await supabase
+        .from("cluster_members")
+        .select("user_id")
+        .eq("cluster_id", cluster.id)
+        .eq("status", "approved");
+
+      if (clusterMembersError) throw clusterMembersError;
+
+      // Get the list of user IDs who are cluster members
+      const clusterMemberIds = clusterMembersData.map(member => member.user_id);
+
+      // Filter to only include cluster members
+      const clusterMembers = allUsers?.filter(user => clusterMemberIds.includes(user.id)) || [];
+
+      // Filter out current leaders on the client side
+      const filteredUsers = clusterMembers.filter(
+        (user) =>
+          user.id !== cluster.lead_id &&
+          user.id !== cluster.deputy_id &&
+          user.id !== cluster.staff_manager_id
+      );
+
+      setAvailableUsers(filteredUsers);
+    } catch (error: any) {
+      console.error("Error removing member:", error);
+      toast.error("Failed to remove member: " + error.message);
+    } finally {
+      setUpdatingRole("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -320,8 +441,8 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center p-8 bg-destructive/10 rounded-lg border border-destructive/30 max-w-md">
           <p className="text-destructive">{error}</p>
-          <Button 
-            className="mt-4" 
+          <Button
+            className="mt-4"
             onClick={() => router.push("/dashboard/clusters")}
           >
             Back to Clusters
@@ -347,8 +468,8 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center p-8 bg-destructive/10 rounded-lg border border-destructive/30 max-w-md">
           <p className="text-destructive">You don't have permission to manage this cluster</p>
-          <Button 
-            className="mt-4" 
+          <Button
+            className="mt-4"
             onClick={() => router.push(`/dashboard/clusters/${params.id}`)}
           >
             Back to Cluster
@@ -559,7 +680,7 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     <SelectValue placeholder="Choose a student..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {allUsers
+                    {availableUsers
                       .filter(user => user.role === 'student')
                       .map(user => (
                         <SelectItem key={user.id} value={user.id}>
@@ -616,7 +737,7 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     <SelectValue placeholder="Choose a student..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {allUsers
+                    {availableUsers
                       .filter(user => user.role === 'student')
                       .map(user => (
                         <SelectItem key={user.id} value={user.id}>
@@ -673,7 +794,7 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
                     <SelectValue placeholder="Choose a staff member..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {allUsers
+                    {availableUsers
                       .filter(user => user.role === 'staff')
                       .map(user => (
                         <SelectItem key={user.id} value={user.id}>
@@ -703,6 +824,94 @@ export default function ClusterSettingsPage({ params }: { params: { id: string }
           </div>
         </div>
       )}
+
+      {/* Member Management Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Member Management
+          </CardTitle>
+          <CardDescription>Add or remove members from this cluster</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Add New Members</h3>
+
+            {/* Search for users to add */}
+            <div className="flex gap-2">
+              <Select
+                value=""
+                onValueChange={(selectedId) => {
+                  // Find user in allUsers that is not already a member
+                  const userToAdd = allUsers.find(u =>
+                    u.id === selectedId &&
+                    !availableUsers.some(av => av.id === selectedId) &&
+                    u.role === 'student'
+                  );
+
+                  if (userToAdd) {
+                    handleAddMember(userToAdd.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Search for users to add..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allUsers
+                    .filter(user =>
+                      user.role === 'student' && // Only allow adding students
+                      !availableUsers.some(av => av.id === user.id) && // Filter out existing members
+                      user.id !== cluster.lead_id && // Don't show current lead
+                      user.id !== cluster.deputy_id && // Don't show current deputy
+                      user.id !== cluster.staff_manager_id // Don't show current staff manager
+                    )
+                    .map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.full_name} ({user.email})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <h3 className="text-lg font-semibold mb-4">Cluster Members</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {availableUsers.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No members in this cluster</p>
+              ) : (
+                availableUsers.map(member => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent"
+                  >
+                    <div>
+                      <p className="font-medium">{member.full_name}</p>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {member.role === 'student' && (
+                        <Badge variant="secondary">Student</Badge>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveMember(member.id)}
+                        disabled={updatingRole === member.id}
+                      >
+                        {updatingRole === member.id ? 'Removing...' : 'Remove'}
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -128,7 +128,9 @@ export function ClusterProjectsList({ clusterId, userRole }: ClusterProjectsList
         }
       } catch (error: any) {
         console.error("Error fetching cluster projects:", error);
-        console.error("Detailed error:", error.message, error.details, error.hint);
+        const errorMessage = error?.message || error?.toString() || "An unknown error occurred";
+        console.error("Detailed error:", errorMessage, error.details, error.hint);
+        toast.error("Error fetching cluster projects: " + errorMessage);
       } finally {
         setLoading(false);
       }

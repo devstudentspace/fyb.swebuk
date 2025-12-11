@@ -13,6 +13,7 @@ interface DashboardWrapperProps {
 export function DashboardWrapper({ children }: DashboardWrapperProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userAcademicLevel, setUserAcademicLevel] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -21,7 +22,7 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
       setLoading(true);
       const supabase = createClient();
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError || !user) {
         setUser(null);
         setLoading(false);
@@ -30,23 +31,26 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
 
       setUser(user);
 
-      // Fetch role from profiles table instead of user metadata
+      // Fetch role and academic level from profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, academic_level')
         .eq('id', user.id)
         .single();
 
       let role = 'student'; // default role
+      let academicLevel = null;
       if (profileError || !profileData) {
         console.error('Error fetching profile or profile not found:', profileError);
         // Fallback to user metadata if profile is not found
         role = user.user_metadata?.role || "student";
       } else {
         role = profileData.role || 'student';
+        academicLevel = profileData.academic_level;
       }
 
       setUserRole(role);
+      setUserAcademicLevel(academicLevel);
       setLoading(false);
     };
 
@@ -71,19 +75,20 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-[oklch(92.2% 0 0)]">
       {/* Desktop Sidebar */}
-      <DashboardNav 
-        userId={user.id} 
-        userProfileRole={userRole!} 
-        isSidebarOpen={isSidebarOpen} 
-        setIsSidebarOpen={setIsSidebarOpen} 
+      <DashboardNav
+        userId={user.id}
+        userProfileRole={userRole!}
+        userAcademicLevel={userAcademicLevel || undefined}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
-        <TopNav 
-          user={user} 
-          userRole={userRole!} 
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+        <TopNav
+          user={user}
+          userRole={userRole!}
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         {/* Main Content */}

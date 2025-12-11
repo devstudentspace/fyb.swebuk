@@ -1,0 +1,3 @@
+-- Seed data has been moved to the API route /api/seed
+-- This file is intentionally left empty of data.
+-- Run the seeder by visiting http://localhost:3000/api/seed

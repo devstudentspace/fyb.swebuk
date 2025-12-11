@@ -82,16 +82,16 @@ export default function AllClustersPage() {
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />
           <Input
             placeholder="Search clusters by name, staff, or leaders..."
-            className="pl-9 border-purple-200 focus:border-purple-400 focus:ring-purple-100 dark:border-purple-800 dark:focus:border-purple-600 dark:focus:ring-purple-900/20"
+            className="pl-9 border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 dark:border-gray-700 dark:focus:border-emerald-400 dark:focus:ring-emerald-900/20"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[200px] border-purple-200 focus:border-purple-400 focus:ring-purple-100 dark:border-purple-800 dark:focus:border-purple-600 dark:focus:ring-purple-900/20">
+          <SelectTrigger className="w-[200px] border-gray-200 focus:border-emerald-500 focus:ring-emerald-100 dark:border-gray-700 dark:focus:border-emerald-400 dark:focus:ring-emerald-900/20">
             <SelectValue placeholder="Filter by Status" />
           </SelectTrigger>
           <SelectContent>
@@ -103,13 +103,13 @@ export default function AllClustersPage() {
             </SelectItem>
             <SelectItem value="active" className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <div className="w-2 h-2 rounded-full bg-emerald-600"></div>
                 Active
               </div>
             </SelectItem>
             <SelectItem value="inactive" className="flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <div className="w-2 h-2 rounded-full bg-amber-600"></div>
                 Inactive
               </div>
             </SelectItem>

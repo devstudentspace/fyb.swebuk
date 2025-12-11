@@ -162,6 +162,50 @@ export default function UpdateProfileForm({
     }
   };
 
+  const removeAvatar = async () => {
+    try {
+      setUploading(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      // Delete the old avatar from storage if it exists
+      if (profile.avatar_url) {
+        const { error: deleteError } = await supabase.storage
+          .from("avatars")
+          .remove([profile.avatar_url]);
+
+        if (deleteError) {
+          console.error("Error deleting old avatar:", deleteError);
+          // Don't throw an error for failed deletion, just log it
+        }
+      }
+
+      // Update the profile to remove avatar_url
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("id", user.id);
+
+      // Reset avatar URL state
+      setAvatarUrl(null);
+      setAvatarFile(null);
+
+      router.refresh();
+      setSuccessMessage("Profile picture removed successfully!");
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Error removing profile picture."
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
@@ -171,7 +215,20 @@ export default function UpdateProfileForm({
 
       let avatar_url = profile.avatar_url;
 
+      // If a new avatar was selected, upload it and delete the old one if it exists
       if (avatarFile) {
+        // Delete the old avatar from storage if it exists
+        if (profile.avatar_url) {
+          const { error: deleteError } = await supabase.storage
+            .from("avatars")
+            .remove([profile.avatar_url]);
+
+          if (deleteError) {
+            console.error("Error deleting old avatar:", deleteError);
+            // Don't throw an error for failed deletion, just log it
+          }
+        }
+
         const fileExt = avatarFile.name.split(".").pop()?.toLowerCase();
         const fileName = `${user.id}-${Math.random()}`;
         const filePath = fileExt ? `${fileName}.${fileExt}` : fileName;
@@ -221,6 +278,10 @@ export default function UpdateProfileForm({
           const normalizedPublicUrl = publicData?.publicUrl?.replace('localhost', '127.0.0.1') || avatar_url;
           setAvatarUrl(normalizedPublicUrl);
         }
+      }
+      // If avatar was removed, set avatarUrl to null
+      else if (!avatar_url && profile.avatar_url) {
+        setAvatarUrl(null);
       }
 
       router.refresh();
@@ -279,7 +340,7 @@ export default function UpdateProfileForm({
             style={{ height: 150, width: 150, display: 'block' }}
           />
         )}
-        <div>
+        <div className="flex flex-col gap-2">
           <Button asChild>
             <label htmlFor="single">
               {uploading ? "Uploading ..." : "Upload"}
@@ -296,6 +357,15 @@ export default function UpdateProfileForm({
             onChange={handleUpload}
             disabled={uploading}
           />
+          {avatarUrl && (
+            <Button
+              variant="outline"
+              onClick={removeAvatar}
+              disabled={uploading}
+            >
+              {uploading ? "Processing..." : "Remove Picture"}
+            </Button>
+          )}
         </div>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -380,7 +450,7 @@ export default function UpdateProfileForm({
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         {successMessage && <p className="text-sm text-green-500">{successMessage}</p>}
-        <Button type="submit" className="w-full" disabled={uploading}>
+        <Button type="submit" className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg" disabled={uploading}>
           {uploading ? "Saving..." : "Update Profile"}
         </Button>
       </form>

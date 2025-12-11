@@ -1,20 +1,45 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { User } from "@supabase/supabase-js";
 import { Users, FileText, Calendar, Settings, GraduationCap, ClipboardList, Award, BarChart } from "lucide-react";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
+
+interface FYPStats {
+  totalAssigned: number;
+  inProgress: number;
+  completed: number;
+  pendingReviews: number;
+}
+
+interface PendingSubmission {
+  id: string;
+  title: string;
+  submission_type: string;
+  submitted_at: string;
+  fyp: {
+    id: string;
+    title: string;
+    student: {
+      full_name: string;
+    };
+  };
+}
 
 interface StaffDashboardProps {
   user: User;
-  fullName?: string; // Pass full name from profile
+  fullName?: string;
+  fypStats: FYPStats | null;
+  pendingSubmissions: PendingSubmission[];
 }
 
-export function StaffDashboard({ user, fullName }: StaffDashboardProps) {
+export function StaffDashboard({ user, fullName, fypStats, pendingSubmissions }: StaffDashboardProps) {
   const staffMetrics = {
-    supervisedStudents: 8,
-    assignedClusters: 2,
-    pendingFyps: 3,
-    upcomingEvents: 1,
+    supervisedStudents: fypStats?.totalAssigned || 0,
+    assignedClusters: 2, // TODO: Fetch from cluster management
+    pendingFyps: fypStats?.pendingReviews || 0,
+    upcomingEvents: 1, // TODO: Fetch from events
   };
 
   const quickActions = [
@@ -56,29 +81,23 @@ export function StaffDashboard({ user, fullName }: StaffDashboardProps) {
     },
   ];
 
-  const supervisoryTasks = [
-    {
-      type: "FYP Proposal",
-      title: "AI-Based Learning Management System",
-      student: "John Doe",
-      due: "2 days",
-      priority: "High",
-    },
-    {
-      type: "Progress Review",
-      title: "Mobile Health App Project",
-      student: "Jane Smith",
-      due: "5 days",
-      priority: "Medium",
-    },
-    {
-      type: "FYP Defense",
-      title: "E-commerce Website",
-      student: "Mike Johnson",
-      due: "1 week",
-      priority: "High",
-    },
-  ];
+  // Format submission type for display
+  const formatSubmissionType = (type: string) => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Calculate priority based on submission age
+  const getPriority = (submittedAt: string) => {
+    const daysSinceSubmission = Math.floor(
+      (Date.now() - new Date(submittedAt).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysSinceSubmission >= 5) return "High";
+    if (daysSinceSubmission >= 2) return "Medium";
+    return "Low";
+  };
 
   return (
     <div className="space-y-6">
@@ -185,34 +204,64 @@ export function StaffDashboard({ user, fullName }: StaffDashboardProps) {
         {/* Supervisory Tasks */}
         <Card>
           <CardHeader>
-            <CardTitle>Supervisory Tasks</CardTitle>
+            <CardTitle>Pending Submissions</CardTitle>
             <CardDescription>
-              FYP supervision and assessment tasks
+              Recent FYP submissions awaiting your review
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {supervisoryTasks.map((task, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${
-                      task.priority === 'High' ? 'bg-red-500' :
-                      task.priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                    }`} />
-                    <div>
-                      <p className="text-sm font-medium">{task.title}</p>
-                      <p className="text-xs text-gray-500">{task.type} • {task.student}</p>
+            {pendingSubmissions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p>No pending submissions to review</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingSubmissions.map((submission) => {
+                  const priority = getPriority(submission.submitted_at);
+                  return (
+                    <div key={submission.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          priority === 'High' ? 'bg-red-500' :
+                          priority === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{submission.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatSubmissionType(submission.submission_type)} • {submission.fyp.student.full_name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0 ml-4">
+                        <p className="text-xs text-gray-600 mb-1">
+                          {formatDistanceToNow(new Date(submission.submitted_at), { addSuffix: true })}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-2 hover:bg-muted"
+                          asChild
+                        >
+                          <Link href={`/dashboard/staff/fyp/${submission.fyp.id}`}>
+                            Review
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-600">{task.due}</p>
-                    <Button size="sm" variant="outline" className="border-2 hover:bg-muted">
-                      Review
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            )}
+            {pendingSubmissions.length > 0 && (
+              <div className="mt-4">
+                <Button variant="ghost" className="w-full" asChild>
+                  <Link href="/dashboard/staff/fyp">
+                    View All FYP Projects →
+                  </Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -221,31 +270,52 @@ export function StaffDashboard({ user, fullName }: StaffDashboardProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Student Performance Overview</CardTitle>
+            <CardTitle>FYP Progress Overview</CardTitle>
             <CardDescription>
-              Track student progress and performance metrics
+              Track supervised student progress and performance
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-lg font-bold text-green-600">7/8</div>
-                  <p className="text-xs text-gray-600">On Track</p>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-lg font-bold text-green-600">{fypStats?.inProgress || 0}</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">In Progress</p>
                 </div>
-                <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                  <div className="text-lg font-bold text-yellow-600">1/8</div>
-                  <p className="text-xs text-gray-600">Need Attention</p>
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-lg font-bold text-blue-600">{fypStats?.completed || 0}</div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Completed</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Average Progress</span>
-                  <span className="font-medium">78%</span>
+                  <span>Total Supervised</span>
+                  <span className="font-medium">{fypStats?.totalAssigned || 0}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '78%' }}></div>
+                <div className="flex justify-between text-sm">
+                  <span>Pending Reviews</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {fypStats?.pendingReviews || 0}
+                  </Badge>
                 </div>
+                {fypStats && fypStats.totalAssigned > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm mt-3">
+                      <span>Completion Rate</span>
+                      <span className="font-medium">
+                        {Math.round((fypStats.completed / fypStats.totalAssigned) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full"
+                        style={{
+                          width: `${(fypStats.completed / fypStats.totalAssigned) * 100}%`
+                        }}
+                      ></div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>

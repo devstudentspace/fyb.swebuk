@@ -12,7 +12,11 @@
       "Bash(npm run dev:*)",
       "Bash(find:*)",
       "Bash(npm install:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(supabase status:*)",
+      "Bash(cat:*)",
+      "Bash(node:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

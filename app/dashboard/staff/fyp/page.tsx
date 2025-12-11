@@ -5,33 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FileText, GraduationCap, User, Calendar } from "lucide-react";
 import Link from "next/link";
-
-async function getAllFYPs() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("final_year_projects")
-    .select(`
-      *,
-      student:profiles!student_id (
-        id,
-        full_name,
-        avatar_url
-      ),
-      supervisor:profiles!supervisor_id (
-        id,
-        full_name
-      )
-    `)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Error fetching FYPs:", error);
-    return [];
-  }
-
-  return data || [];
-}
+import { getAllFYPsForStaff, getStaffDashboardStats } from "@/lib/supabase/fyp-staff-actions";
+import { ProjectMetrics } from "@/components/fyp/staff/project-metrics";
 
 function getStatusBadge(status: string) {
   const statusConfig: Record<string, { variant: any; label: string; color: string }> = {
@@ -71,7 +46,8 @@ export default async function StaffFYPPage() {
     redirect("/dashboard");
   }
 
-  const fyps = await getAllFYPs();
+  const fyps = await getAllFYPsForStaff();
+  const stats = await getStaffDashboardStats();
 
   // Group FYPs by status for better organization
   const fypsByStatus = {
@@ -93,7 +69,9 @@ export default async function StaffFYPPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <ProjectMetrics stats={stats} />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 hidden">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">

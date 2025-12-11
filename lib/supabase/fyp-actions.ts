@@ -34,7 +34,7 @@ export async function getStudentFYP() {
   }
 }
 
-export async function submitFYPProposal(title: string, description: string) {
+export async function submitFYPProposal(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -54,14 +54,63 @@ export async function submitFYPProposal(title: string, description: string) {
   }
 
   try {
-    const { error } = await supabase.from("final_year_projects").insert({
-      student_id: user.id,
-      title,
-      description,
-      status: "proposal_submitted",
-    });
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const file = formData.get("file") as File;
 
-    if (error) throw error;
+    if (!title || !description) {
+      return { success: false, error: "Title and description are required" };
+    }
+
+    // Create FYP project first
+    const { data: fypData, error: fypError } = await supabase
+      .from("final_year_projects")
+      .insert({
+        student_id: user.id,
+        title,
+        description,
+        status: "in_progress",
+      })
+      .select()
+      .single();
+
+    if (fypError) throw fypError;
+
+    // Upload file if provided and create submission
+    if (file && file.size > 0) {
+      const timestamp = Date.now();
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/${fypData.id}/proposal_${timestamp}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("fyp-documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("fyp-documents")
+        .getPublicUrl(filePath);
+
+      // Create proposal submission
+      const { error: submissionError } = await supabase
+        .from("fyp_submissions")
+        .insert({
+          fyp_id: fypData.id,
+          submission_type: "proposal",
+          title: "Project Proposal",
+          description: description,
+          file_url: publicUrl,
+          file_name: file.name,
+          file_size: file.size,
+          status: "pending",
+        });
+
+      if (submissionError) throw submissionError;
+    }
 
     revalidatePath("/dashboard/student/fyp");
     return { success: true };
@@ -328,6 +377,181 @@ export async function deleteFYPDocument(
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting document:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ============================================
+// FYP SUBMISSIONS ACTIONS (New System)
+// ============================================
+
+export async function getFYPSubmissions(fypId: string) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("fyp_submissions")
+      .select("*")
+      .eq("fyp_id", fypId)
+      .order("submitted_at", { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching submissions:", error);
+    return [];
+  }
+}
+
+export async function createFYPSubmission(
+  fypId: string,
+  submissionType: "proposal" | "progress_report" | "chapter_draft" | "final_thesis",
+  title: string,
+  description: string,
+  file?: File
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  try {
+    let fileUrl = null;
+    let fileName = null;
+    let fileSize = null;
+
+    // Upload file if provided
+    if (file) {
+      const timestamp = Date.now();
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/${fypId}/${submissionType}_${timestamp}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("fyp-documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("fyp-documents")
+        .getPublicUrl(filePath);
+
+      fileUrl = publicUrl;
+      fileName = file.name;
+      fileSize = file.size;
+    }
+
+    // Create submission record
+    const { error: insertError } = await supabase.from("fyp_submissions").insert({
+      fyp_id: fypId,
+      submission_type: submissionType,
+      title,
+      description,
+      file_url: fileUrl,
+      file_name: fileName,
+      file_size: fileSize,
+      status: "pending",
+    });
+
+    if (insertError) throw insertError;
+
+    revalidatePath("/dashboard/student/fyp");
+    revalidatePath("/dashboard/staff/fyp");
+    revalidatePath("/dashboard/admin/fyp");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error creating submission:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function reviewSubmission(
+  submissionId: string,
+  status: "approved" | "needs_revision" | "rejected",
+  feedback: string
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  // Verify user is staff or admin
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || (profile.role !== "staff" && profile.role !== "admin")) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    const { error } = await supabase
+      .from("fyp_submissions")
+      .update({
+        status,
+        supervisor_feedback: feedback,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", submissionId);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard/student/fyp");
+    revalidatePath("/dashboard/staff/fyp");
+    revalidatePath("/dashboard/admin/fyp");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error reviewing submission:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteSubmission(submissionId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Not authenticated" };
+
+  try {
+    // Get submission details first
+    const { data: submission } = await supabase
+      .from("fyp_submissions")
+      .select("file_url, fyp_id")
+      .eq("id", submissionId)
+      .single();
+
+    if (!submission) {
+      return { success: false, error: "Submission not found" };
+    }
+
+    // Delete file from storage if exists
+    if (submission.file_url) {
+      const urlParts = submission.file_url.split("/");
+      const bucketIndex = urlParts.findIndex((part) => part === "fyp-documents");
+      const filePath = urlParts.slice(bucketIndex + 1).join("/");
+
+      await supabase.storage.from("fyp-documents").remove([filePath]);
+    }
+
+    // Delete submission record
+    const { error } = await supabase
+      .from("fyp_submissions")
+      .delete()
+      .eq("id", submissionId);
+
+    if (error) throw error;
+
+    revalidatePath("/dashboard/student/fyp");
+    revalidatePath("/dashboard/staff/fyp");
+    revalidatePath("/dashboard/admin/fyp");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting submission:", error);
     return { success: false, error: error.message };
   }
 }

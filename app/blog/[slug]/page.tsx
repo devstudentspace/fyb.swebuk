@@ -135,6 +135,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         {/* Content */}
         <div className={`relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${blog.featured_image_url ? "pt-6 md:-mt-32" : "pt-8"}`}>
+          <div className="bg-background/95 backdrop-blur-sm rounded-t-2xl md:rounded-2xl shadow-lg border border-border/50 p-6 md:p-8">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
             <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-1">
@@ -194,11 +195,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </span>
             </div>
           </div>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="bg-background/95 backdrop-blur-sm md:rounded-b-2xl shadow-lg border border-t-0 border-border/50 p-6 md:p-8 -mt-px">
         {/* Article Content */}
         <article className="prose prose-lg dark:prose-invert max-w-none">
           <BlogContent content={blog.content} />
@@ -285,6 +288,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             currentUserId={currentUser?.id}
           />
         </section>
+        </div>
       </div>
 
       {/* Related Posts */}

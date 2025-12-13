@@ -134,14 +134,14 @@ export async function getBlogBySlug(slug: string) {
       if (error.code === "PGRST116") {
         return null; // Not found
       }
-      console.error("Error fetching blog by slug:", error);
+      console.error("Error fetching blog by slug:", error.message || error.code || JSON.stringify(error));
       return null;
     }
 
     // Transform to include signed image URL
     return transformBlogWithSignedUrl(data as DetailedBlog);
-  } catch (error) {
-    console.error("Unexpected error fetching blog:", error);
+  } catch (error: any) {
+    console.error("Unexpected error fetching blog:", error?.message || error);
     return null;
   }
 }

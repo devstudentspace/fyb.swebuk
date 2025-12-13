@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Clock, MessageCircle, BookOpen, User } from "lucide-react";
+import { Clock, MessageCircle, BookOpen, User, Eye, Heart } from "lucide-react";
 import Link from "next/link";
 import type { DetailedBlog } from "@/lib/constants/blog";
 import { cn } from "@/lib/utils";
@@ -104,7 +104,15 @@ export function BlogCard({
                   </Avatar>
                   <span className="text-muted-foreground">{blog.author_name}</span>
                 </div>
-                <div className="flex items-center space-x-3 text-muted-foreground">
+                <div className="flex items-center space-x-3 text-muted-foreground text-xs">
+                  <span className="flex items-center">
+                    <Eye className="w-4 h-4 mr-1" />
+                    {blog.view_count || 0}
+                  </span>
+                  <span className="flex items-center">
+                    <Heart className="w-4 h-4 mr-1" />
+                    {blog.likes_count || 0}
+                  </span>
                   <span className="flex items-center">
                     <MessageCircle className="w-4 h-4 mr-1" />
                     {blog.comments_count || 0}
@@ -119,59 +127,90 @@ export function BlogCard({
     );
   }
 
-  // Default variant - content only, no image (like landing page "All Posts" grid)
+  // Default variant - shows image if available
   return (
     <Link href={`/blog/${blog.slug}`} className="group block h-full">
-      <Card className="h-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border-border/50 hover:border-primary/30 hover:from-white/15 hover:to-white/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10">
-        <CardContent className="p-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <Badge
-              variant="secondary"
-              className={cn("text-xs border", colors.bg, colors.text, colors.border)}
-            >
-              {blog.category}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              {blog.read_time_minutes || 5} min read
-            </span>
-          </div>
-
-          <h4 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
-            {blog.title}
-          </h4>
-
-          <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1">
-            {blog.excerpt}
-          </p>
-
-          <div className="flex items-center justify-between text-sm pt-4 border-t border-border/50">
-            <div className="flex items-center space-x-2">
-              {showAuthor ? (
-                <>
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={blog.author_avatar || undefined} />
-                    <AvatarFallback className="text-[10px] bg-gradient-to-r from-primary to-purple-500 text-white">
-                      {blog.author_name?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-muted-foreground truncate max-w-[100px]">{blog.author_name}</span>
-                </>
-              ) : (
-                <>
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-muted-foreground truncate max-w-[100px]">{blog.author_name}</span>
-                </>
-              )}
+      <Card className="h-full bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border-border/50 hover:border-primary/30 hover:from-white/15 hover:to-white/10 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/10 overflow-hidden">
+        <CardContent className="p-0 h-full flex flex-col">
+          {/* Image area - show if image exists */}
+          {hasImage && (
+            <div className="relative h-44 overflow-hidden">
+              <img
+                src={blog.featured_image_url!}
+                alt={blog.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              <Badge
+                variant="secondary"
+                className={cn("absolute top-3 left-3 text-xs border", colors.bg, colors.text, colors.border)}
+              >
+                {blog.category}
+              </Badge>
             </div>
-            <div className="flex items-center space-x-3 text-muted-foreground text-xs">
-              <span className="flex items-center">
-                <MessageCircle className="w-4 h-4 mr-1" />
-                {blog.comments_count || 0}
-              </span>
-              <span className="flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
-                {formatDate(blog.published_at || blog.created_at)}
-              </span>
+          )}
+
+          <div className={cn("flex-1 flex flex-col", hasImage ? "p-4" : "p-6")}>
+            {/* Category badge - only show here if no image */}
+            {!hasImage && (
+              <div className="flex items-center justify-between mb-3">
+                <Badge
+                  variant="secondary"
+                  className={cn("text-xs border", colors.bg, colors.text, colors.border)}
+                >
+                  {blog.category}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {blog.read_time_minutes || 5} min read
+                </span>
+              </div>
+            )}
+
+            <h4 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-2">
+              {blog.title}
+            </h4>
+
+            <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-1">
+              {blog.excerpt}
+            </p>
+
+            <div className="flex items-center justify-between text-sm pt-3 border-t border-border/50">
+              <div className="flex items-center space-x-2">
+                {showAuthor ? (
+                  <>
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={blog.author_avatar || undefined} />
+                      <AvatarFallback className="text-[10px] bg-gradient-to-r from-primary to-purple-500 text-white">
+                        {blog.author_name?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-muted-foreground truncate max-w-[80px]">{blog.author_name}</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground truncate max-w-[80px]">{blog.author_name}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center space-x-2 text-muted-foreground text-xs">
+                <span className="flex items-center">
+                  <Eye className="w-3.5 h-3.5 mr-0.5" />
+                  {blog.view_count || 0}
+                </span>
+                <span className="flex items-center">
+                  <Heart className="w-3.5 h-3.5 mr-0.5" />
+                  {blog.likes_count || 0}
+                </span>
+                <span className="flex items-center">
+                  <MessageCircle className="w-3.5 h-3.5 mr-0.5" />
+                  {blog.comments_count || 0}
+                </span>
+                <span className="flex items-center">
+                  <Clock className="w-3.5 h-3.5 mr-0.5" />
+                  {formatDate(blog.published_at || blog.created_at)}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>

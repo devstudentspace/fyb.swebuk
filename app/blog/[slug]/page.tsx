@@ -108,23 +108,33 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <header className="relative">
         {/* Featured Image */}
         {blog.featured_image_url ? (
-          <div className="relative h-[60vh] md:h-[70vh] lg:h-[75vh] w-full">
-            <img
-              src={blog.featured_image_url}
-              alt={blog.title}
-              className="w-full h-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-          </div>
+          <>
+            {/* Mobile: Full image in container */}
+            <div className="block md:hidden px-4 pt-6">
+              <div className="relative w-full rounded-xl overflow-hidden shadow-lg">
+                <img
+                  src={blog.featured_image_url}
+                  alt={blog.title}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+            </div>
+            {/* Desktop: Full width with overlap */}
+            <div className="hidden md:block relative w-full aspect-[24/9]">
+              <img
+                src={blog.featured_image_url}
+                alt={blog.title}
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            </div>
+          </>
         ) : (
           <div className="h-32 bg-gradient-to-br from-primary/10 to-primary/5" />
         )}
 
-        {/* Content overlay */}
-        <div className={cn(
-          "relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8",
-          blog.featured_image_url ? "-mt-32 md:-mt-40" : "pt-8"
-        )}>
+        {/* Content */}
+        <div className={`relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${blog.featured_image_url ? "pt-6 md:-mt-32" : "pt-8"}`}>
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
             <Link href="/blog" className="hover:text-primary transition-colors flex items-center gap-1">

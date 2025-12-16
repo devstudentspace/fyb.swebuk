@@ -24,6 +24,14 @@ export async function GET() {
     console.log("Starting cleanup...");
 
     // Delete existing data (order matters due to foreign keys)
+    // Events
+    await supabase.from('event_feedback').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('event_certificates').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('event_attendance').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('event_registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('event_tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await supabase.from('events').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // Blogs
     await supabase.from('blog_likes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('blog_comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await supabase.from('blog_tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -515,7 +523,7 @@ export async function GET() {
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Web Development'],
-            view_count: 245,
+            views_count: 245,
             read_time_minutes: 8,
             published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Next.js', 'React', 'Web Development', 'Tutorial']
@@ -560,7 +568,7 @@ predictions = model.predict(X_test)</code></pre>
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Artificial Intelligence'],
-            view_count: 312,
+            views_count: 312,
             read_time_minutes: 10,
             published_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Python', 'Machine Learning', 'AI', 'scikit-learn', 'Data Science']
@@ -608,7 +616,7 @@ class MyApp extends StatelessWidget {
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Mobile Development'],
-            view_count: 189,
+            views_count: 189,
             read_time_minutes: 7,
             published_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Flutter', 'Dart', 'Mobile Development', 'Cross-Platform']
@@ -654,7 +662,7 @@ class MyApp extends StatelessWidget {
             category: 'tutorials',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            view_count: 156,
+            views_count: 156,
             read_time_minutes: 5,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
@@ -706,7 +714,7 @@ class MyApp extends StatelessWidget {
 <p>Good luck with your FYP! It's challenging but incredibly rewarding.</p>`,
             category: 'tips',
             status: 'published',
-            view_count: 423,
+            views_count: 423,
             read_time_minutes: 6,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -750,7 +758,7 @@ class MyApp extends StatelessWidget {
             category: 'ai_ml',
             status: 'published',
             cluster_id: clusterIds['Artificial Intelligence'],
-            view_count: 278,
+            views_count: 278,
             read_time_minutes: 8,
             approved_by: userData['staff2@swebuk.com'],
             approved_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
@@ -804,7 +812,7 @@ class MyApp extends StatelessWidget {
             category: 'frontend',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            view_count: 134,
+            views_count: 134,
             read_time_minutes: 5,
             approved_by: userData['lead1@swebuk.com'],
             approved_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
@@ -840,7 +848,7 @@ class MyApp extends StatelessWidget {
 <p>I'm excited for what's ahead!</p>`,
             category: 'career',
             status: 'pending_approval',
-            view_count: 0,
+            views_count: 0,
             read_time_minutes: 4,
             tags: ['Student Life', 'Career', 'Advice', 'Freshman']
         },
@@ -882,7 +890,7 @@ app.listen(3000, () => {
             category: 'backend',
             status: 'pending_approval',
             cluster_id: clusterIds['Web Development'],
-            view_count: 0,
+            views_count: 0,
             read_time_minutes: 7,
             tags: ['Node.js', 'Express', 'API', 'Backend']
         },
@@ -906,7 +914,7 @@ app.listen(3000, () => {
 <p>More content coming soon...</p>`,
             category: 'devops',
             status: 'draft',
-            view_count: 0,
+            views_count: 0,
             read_time_minutes: 5,
             tags: ['Docker', 'DevOps', 'Containers']
         },
@@ -920,8 +928,8 @@ app.listen(3000, () => {
             content: `<p>Just some random code I found useful.</p>`,
             category: 'tips',
             status: 'rejected',
-            rejected_reason: 'The content is too brief and lacks original insights. Please expand with explanations and context for each snippet.',
-            view_count: 0,
+            rejection_reason: 'The content is too brief and lacks original insights. Please expand with explanations and context for each snippet.',
+            views_count: 0,
             read_time_minutes: 1,
             tags: ['Code', 'Snippets']
         },
@@ -959,7 +967,7 @@ app.listen(3000, () => {
             category: 'announcements',
             status: 'published',
             is_featured: false,
-            view_count: 567,
+            views_count: 567,
             read_time_minutes: 3,
             published_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Announcement', 'Community', 'Welcome']
@@ -999,7 +1007,7 @@ refactor: simplify validation logic</code></pre>
             category: 'devops',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            view_count: 198,
+            views_count: 198,
             read_time_minutes: 6,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
@@ -1122,6 +1130,205 @@ refactor: simplify validation logic</code></pre>
     }
 
     console.log("Blog seeding complete!");
+
+    // 8. Create Events
+    console.log("Creating events...");
+
+    const eventsToCreate = [
+        {
+            organizer_id: userData['staff1@swebuk.com'],
+            title: 'Introduction to Web Development Workshop',
+            slug: 'intro-web-dev-workshop',
+            description: 'A comprehensive workshop covering HTML, CSS, and JavaScript fundamentals. Perfect for beginners looking to start their web development journey.',
+            short_description: 'Learn the basics of web development in this hands-on workshop.',
+            event_type: 'workshop',
+            category: 'technical',
+            start_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+            end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(), // +4 hours
+            registration_deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+            location_type: 'physical',
+            venue_name: 'Main Auditorium',
+            location: 'Computer Science Building, Room 101',
+            max_capacity: 50,
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: true,
+            published_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['Web Development', 'HTML', 'CSS', 'JavaScript', 'Beginners']
+        },
+        {
+            organizer_id: userData['staff2@swebuk.com'],
+            title: 'AI & Machine Learning Seminar',
+            slug: 'ai-ml-seminar',
+            description: 'Join us for an enlightening seminar on the latest trends in Artificial Intelligence and Machine Learning. Industry experts will share insights on neural networks, deep learning, and practical applications.',
+            short_description: 'Explore the future of AI with industry experts.',
+            event_type: 'seminar',
+            category: 'technical',
+            start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+            end_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+            registration_deadline: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+            location_type: 'hybrid',
+            venue_name: 'Lecture Hall A',
+            location: 'Engineering Building, Level 3',
+            meeting_url: 'https://meet.google.com/abc-defg-hij',
+            max_capacity: 100,
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: true,
+            cluster_id: clusterIds['Artificial Intelligence'],
+            published_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['AI', 'Machine Learning', 'Deep Learning', 'Neural Networks']
+        },
+        {
+            organizer_id: userData['staff3@swebuk.com'],
+            title: 'Spring 2024 Hackathon',
+            slug: 'spring-2024-hackathon',
+            description: '24-hour coding marathon! Build innovative solutions, collaborate with peers, and compete for amazing prizes. Categories include Web Apps, Mobile Apps, AI/ML, and Social Impact.',
+            short_description: '24-hour hackathon with prizes and mentorship.',
+            event_type: 'hackathon',
+            category: 'competition',
+            start_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days from now
+            end_date: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString(), // +24 hours
+            registration_deadline: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
+            location_type: 'physical',
+            venue_name: 'Innovation Lab',
+            location: 'Technology Center, Ground Floor',
+            max_capacity: 80,
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: true,
+            published_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['Hackathon', 'Coding', 'Competition', 'Innovation']
+        },
+        {
+            organizer_id: userData['staff1@swebuk.com'],
+            title: 'Career Development: Tech Interviews',
+            slug: 'career-tech-interviews',
+            description: 'Master the art of technical interviews! Learn about common interview questions, coding challenges, system design, and behavioral questions. Includes mock interviews and feedback.',
+            short_description: 'Ace your tech interviews with expert guidance.',
+            event_type: 'training',
+            category: 'career',
+            start_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+            end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+            registration_deadline: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+            location_type: 'online',
+            meeting_url: 'https://zoom.us/j/123456789',
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: false,
+            published_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['Career', 'Interviews', 'Job Search', 'Technical Skills']
+        },
+        {
+            organizer_id: userData['staff2@swebuk.com'],
+            title: 'React.js Masterclass',
+            slug: 'reactjs-masterclass',
+            description: 'Deep dive into React.js! Learn advanced concepts including hooks, context API, performance optimization, and testing. Build a real-world application from scratch.',
+            short_description: 'Advanced React.js training for experienced developers.',
+            event_type: 'workshop',
+            category: 'technical',
+            start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000).toISOString(),
+            registration_deadline: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+            location_type: 'physical',
+            venue_name: 'Computer Lab 2',
+            location: 'CS Building, Room 205',
+            max_capacity: 30,
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: true,
+            cluster_id: clusterIds['Web Development'],
+            published_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['React', 'JavaScript', 'Frontend', 'Web Development']
+        },
+        {
+            organizer_id: userData['staff3@swebuk.com'],
+            title: 'Networking Night: Meet Industry Professionals',
+            slug: 'networking-night-industry',
+            description: 'Connect with tech industry professionals, alumni, and potential employers. Great opportunity to learn about career paths, get advice, and make valuable connections.',
+            short_description: 'Network with tech professionals and alumni.',
+            event_type: 'meetup',
+            category: 'networking',
+            start_date: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000).toISOString(),
+            end_date: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+            location_type: 'physical',
+            venue_name: 'Student Center Lounge',
+            location: 'Student Center, 2nd Floor',
+            max_capacity: 60,
+            is_registration_required: true,
+            is_public: true,
+            status: 'published',
+            certificate_enabled: false,
+            published_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+            tags: ['Networking', 'Career', 'Industry', 'Alumni']
+        }
+    ];
+
+    const eventIds: any = {};
+
+    for (const event of eventsToCreate) {
+        // Extract tags from event object before insertion
+        const { tags, ...eventWithoutTags } = event;
+
+        const { data: eventData, error: eventError } = await supabase
+            .from('events')
+            .insert(eventWithoutTags)
+            .select()
+            .single();
+
+        if (eventError) {
+            console.error(`Error creating event "${event.title}":`, eventError);
+            continue;
+        }
+
+        if (eventData) {
+            eventIds[event.slug] = eventData.id;
+
+            // Add tags if provided
+            if (tags) {
+                for (const tag of tags) {
+                    await supabase.from('event_tags').insert({
+                        event_id: eventData.id,
+                        tag: tag.toLowerCase()
+                    });
+                }
+            }
+        }
+    }
+
+    // 9. Create Event Registrations
+    console.log("Creating event registrations...");
+
+    const registrationsToCreate = [
+        { event_slug: 'intro-web-dev-workshop', user_emails: ['student100@swebuk.com', 'student100_2@swebuk.com', 'student200@swebuk.com', 'deputy1@swebuk.com'] },
+        { event_slug: 'ai-ml-seminar', user_emails: ['student400@swebuk.com', 'student400_2@swebuk.com', 'lead2@swebuk.com', 'student300@swebuk.com'] },
+        { event_slug: 'spring-2024-hackathon', user_emails: ['student200_2@swebuk.com', 'student300_2@swebuk.com', 'lead1@swebuk.com', 'deputy2@swebuk.com'] },
+        { event_slug: 'career-tech-interviews', user_emails: ['student300@swebuk.com', 'student400@swebuk.com', 'student200@swebuk.com'] },
+        { event_slug: 'reactjs-masterclass', user_emails: ['student200@swebuk.com', 'student200_2@swebuk.com', 'lead1@swebuk.com'] },
+        { event_slug: 'networking-night-industry', user_emails: ['student400@swebuk.com', 'student400_2@swebuk.com', 'student300@swebuk.com', 'lead2@swebuk.com', 'deputy1@swebuk.com'] }
+    ];
+
+    for (const regGroup of registrationsToCreate) {
+        if (eventIds[regGroup.event_slug]) {
+            for (const userEmail of regGroup.user_emails) {
+                const userId = userData[userEmail];
+                if (userId) {
+                    await supabase.from('event_registrations').insert({
+                        event_id: eventIds[regGroup.event_slug],
+                        user_id: userId,
+                        status: 'registered'
+                    });
+                }
+            }
+        }
+    }
+
+    console.log("Event seeding complete!");
 
     return NextResponse.json({ message: 'Seeding completed successfully' });
   } catch (error: any) {

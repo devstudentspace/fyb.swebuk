@@ -114,6 +114,7 @@ export async function updateSession(request: NextRequest) {
     "/login",
     "/auth",
     "/blog",  // Public blog listing
+    "/events",  // Public events listing
   ];
 
   const isPublicRoute = publicRoutes.some(route =>

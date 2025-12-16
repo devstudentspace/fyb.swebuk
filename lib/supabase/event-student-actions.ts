@@ -449,23 +449,41 @@ export async function getMyCertificates() {
   if (!user) return [];
 
   try {
-    const { data, error } = await supabase
+    // First get certificates without joining events to avoid RLS recursion
+    const { data: certificates, error: certError } = await supabase
       .from("event_certificates")
-      .select(
-        `
-        *,
-        events (title, start_date, end_date, event_type)
-      `
-      )
+      .select("*")
       .eq("user_id", user.id)
       .order("issued_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching certificates:", error);
+    if (certError) {
+      console.error("Error fetching certificates:", certError);
       return [];
     }
 
-    return data || [];
+    if (!certificates || certificates.length === 0) {
+      return [];
+    }
+
+    // Then get event details separately
+    const eventIds = certificates.map((cert: any) => cert.event_id);
+    const { data: events, error: eventsError } = await supabase
+      .from("events")
+      .select("id, title, start_date, end_date, event_type")
+      .in("id", eventIds);
+
+    if (eventsError) {
+      console.error("Error fetching event details:", eventsError);
+      // Return certificates without event details rather than failing completely
+      return certificates;
+    }
+
+    // Combine the data
+    const eventsMap = new Map(events?.map((e: any) => [e.id, e]) || []);
+    return certificates.map((cert: any) => ({
+      ...cert,
+      events: eventsMap.get(cert.event_id) || null,
+    }));
   } catch (error) {
     console.error("Unexpected error:", error);
     return [];

@@ -186,6 +186,47 @@ export async function getEventById(eventId: string) {
   }
 }
 
+export async function getEventRegisteredUsers(
+  eventId: string,
+  limit: number = 10
+): Promise<Array<{ id: string; avatar_url: string | null; full_name: string | null }>> {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("event_registrations")
+      .select(`
+        user_id,
+        profiles!event_registrations_user_id_fkey(
+          id,
+          avatar_url,
+          full_name
+        )
+      `)
+      .eq("event_id", eventId)
+      .in("status", ["registered", "attended"])
+      .order("registered_at", { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      console.error("Error fetching registered users:", error);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Transform the data to match the expected format
+    return data.map((registration: any) => ({
+      id: registration.profiles.id,
+      avatar_url: registration.profiles.avatar_url,
+      full_name: registration.profiles.full_name,
+    }));
+  } catch (error) {
+    console.error("Unexpected error fetching registered users:", error);
+    return [];
+  }
+}
+
 export async function getUpcomingEvents(limit: number = 6) {
   const supabase = await createClient();
 

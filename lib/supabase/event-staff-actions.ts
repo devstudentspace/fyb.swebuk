@@ -20,7 +20,7 @@ async function checkStaffPermission() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return { allowed: false, user: null, supabase };
 
@@ -398,6 +398,30 @@ export async function getAllEventsForManagement(status?: EventStatus) {
   } catch (error) {
     console.error("Unexpected error:", error);
     return [];
+  }
+}
+
+export async function getEventForManagement(eventId: string) {
+  const { allowed, supabase } = await checkStaffPermission();
+
+  if (!allowed) return null;
+
+  try {
+    const { data: event, error } = await supabase
+      .from("detailed_events")
+      .select("*")
+      .eq("id", eventId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching event for management:", error);
+      return null;
+    }
+
+    return event;
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return null;
   }
 }
 

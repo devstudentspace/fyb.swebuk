@@ -6,6 +6,7 @@ import { Calendar, MapPin, Users, Clock, Star } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RegisteredUsersAvatars } from "@/components/events/registered-users-avatars";
 import type { DetailedEvent } from "@/lib/constants/events";
 import {
   getEventTypeLabel,
@@ -20,12 +21,14 @@ interface EventCardProps {
   event: DetailedEvent;
   variant?: "default" | "compact" | "featured";
   showOrganizer?: boolean;
+  registeredUsers?: Array<{ id: string; avatar_url: string | null; full_name: string | null }>;
 }
 
 export function EventCard({
   event,
   variant = "default",
   showOrganizer = true,
+  registeredUsers = [],
 }: EventCardProps) {
   const timeStatus = getEventTimeStatus(event.start_date, event.end_date);
 
@@ -124,10 +127,12 @@ export function EventCard({
                 <MapPin className="h-4 w-4" />
                 {event.location || getLocationTypeLabel(event.location_type)}
               </span>
-              <span className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {event.registrations_count} registered
-              </span>
+              <RegisteredUsersAvatars
+                users={registeredUsers}
+                maxDisplay={4}
+                totalCount={event.registrations_count}
+                size="sm"
+              />
               {event.average_rating > 0 && (
                 <span className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -159,17 +164,19 @@ export function EventCard({
   // Default variant
   return (
     <Link href={`/events/${event.slug}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-all duration-200 h-full flex flex-col">
-        <div className="relative h-40">
+      <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full flex flex-col border-2 hover:border-primary/20">
+        <div className="relative h-48">
           {event.banner_image_url ? (
             <Image
               src={event.banner_image_url}
               alt={event.title}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
+              className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-background relative">
+              <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+            </div>
           )}
           <div className="absolute top-3 left-3 flex gap-2">
             <Badge
@@ -242,12 +249,13 @@ export function EventCard({
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {event.registrations_count}
-                {event.max_capacity && ` / ${event.max_capacity}`}
-              </span>
+            <div className="flex items-center justify-between gap-2">
+              <RegisteredUsersAvatars
+                users={registeredUsers}
+                maxDisplay={3}
+                totalCount={event.registrations_count}
+                size="sm"
+              />
               {event.average_rating > 0 && (
                 <span className="flex items-center gap-1">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />

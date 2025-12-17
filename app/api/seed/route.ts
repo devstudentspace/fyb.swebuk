@@ -47,9 +47,9 @@ export async function GET() {
     await supabase.from('academic_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     
     // Delete users (This will cascade to profiles if configured, or we delete profiles manually)
-    // Since we can't easily "delete all users" with one command in client lib, 
+    // Since we can't easily "delete all users" with one command in client lib,
     // we'll iterate through known seeded emails or just list all users.
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const { data: users, error: listError } = await (supabase.auth as any).admin.listUsers({ perPage: 1000 });
     if (listError) throw listError;
 
     const seededEmails = [
@@ -73,7 +73,7 @@ export async function GET() {
 
     for (const user of users.users) {
         if (seededEmails.includes(user.email || '')) {
-            await supabase.auth.admin.deleteUser(user.id);
+            await (supabase.auth as any).admin.deleteUser(user.id);
         }
     }
     console.log("Cleanup complete.");
@@ -105,7 +105,7 @@ export async function GET() {
     ];
 
     for (const u of usersToCreate) {
-      const { data, error } = await supabase.auth.admin.createUser({
+      const { data, error } = await (supabase.auth as any).admin.createUser({
         email: u.email,
         password: u.password,
         email_confirm: true,
@@ -523,7 +523,7 @@ export async function GET() {
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Web Development'],
-            views_count: 245,
+            view_count: 245,
             read_time_minutes: 8,
             published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Next.js', 'React', 'Web Development', 'Tutorial']
@@ -568,7 +568,7 @@ predictions = model.predict(X_test)</code></pre>
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Artificial Intelligence'],
-            views_count: 312,
+            view_count: 312,
             read_time_minutes: 10,
             published_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Python', 'Machine Learning', 'AI', 'scikit-learn', 'Data Science']
@@ -616,7 +616,7 @@ class MyApp extends StatelessWidget {
             status: 'published',
             is_featured: true,
             cluster_id: clusterIds['Mobile Development'],
-            views_count: 189,
+            view_count: 189,
             read_time_minutes: 7,
             published_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Flutter', 'Dart', 'Mobile Development', 'Cross-Platform']
@@ -662,7 +662,7 @@ class MyApp extends StatelessWidget {
             category: 'tutorials',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            views_count: 156,
+            view_count: 156,
             read_time_minutes: 5,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
@@ -714,7 +714,7 @@ class MyApp extends StatelessWidget {
 <p>Good luck with your FYP! It's challenging but incredibly rewarding.</p>`,
             category: 'tips',
             status: 'published',
-            views_count: 423,
+            view_count: 423,
             read_time_minutes: 6,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -758,7 +758,7 @@ class MyApp extends StatelessWidget {
             category: 'ai_ml',
             status: 'published',
             cluster_id: clusterIds['Artificial Intelligence'],
-            views_count: 278,
+            view_count: 278,
             read_time_minutes: 8,
             approved_by: userData['staff2@swebuk.com'],
             approved_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
@@ -812,7 +812,7 @@ class MyApp extends StatelessWidget {
             category: 'frontend',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            views_count: 134,
+            view_count: 134,
             read_time_minutes: 5,
             approved_by: userData['lead1@swebuk.com'],
             approved_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
@@ -848,7 +848,7 @@ class MyApp extends StatelessWidget {
 <p>I'm excited for what's ahead!</p>`,
             category: 'career',
             status: 'pending_approval',
-            views_count: 0,
+            view_count: 0,
             read_time_minutes: 4,
             tags: ['Student Life', 'Career', 'Advice', 'Freshman']
         },
@@ -890,7 +890,7 @@ app.listen(3000, () => {
             category: 'backend',
             status: 'pending_approval',
             cluster_id: clusterIds['Web Development'],
-            views_count: 0,
+            view_count: 0,
             read_time_minutes: 7,
             tags: ['Node.js', 'Express', 'API', 'Backend']
         },
@@ -914,7 +914,7 @@ app.listen(3000, () => {
 <p>More content coming soon...</p>`,
             category: 'devops',
             status: 'draft',
-            views_count: 0,
+            view_count: 0,
             read_time_minutes: 5,
             tags: ['Docker', 'DevOps', 'Containers']
         },
@@ -928,8 +928,8 @@ app.listen(3000, () => {
             content: `<p>Just some random code I found useful.</p>`,
             category: 'tips',
             status: 'rejected',
-            rejection_reason: 'The content is too brief and lacks original insights. Please expand with explanations and context for each snippet.',
-            views_count: 0,
+            rejected_reason: 'The content is too brief and lacks original insights. Please expand with explanations and context for each snippet.',
+            view_count: 0,
             read_time_minutes: 1,
             tags: ['Code', 'Snippets']
         },
@@ -967,7 +967,7 @@ app.listen(3000, () => {
             category: 'announcements',
             status: 'published',
             is_featured: false,
-            views_count: 567,
+            view_count: 567,
             read_time_minutes: 3,
             published_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
             tags: ['Announcement', 'Community', 'Welcome']
@@ -1007,7 +1007,7 @@ refactor: simplify validation logic</code></pre>
             category: 'devops',
             status: 'published',
             cluster_id: clusterIds['Web Development'],
-            views_count: 198,
+            view_count: 198,
             read_time_minutes: 6,
             approved_by: userData['staff1@swebuk.com'],
             approved_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
@@ -1188,7 +1188,7 @@ refactor: simplify validation logic</code></pre>
             description: '24-hour coding marathon! Build innovative solutions, collaborate with peers, and compete for amazing prizes. Categories include Web Apps, Mobile Apps, AI/ML, and Social Impact.',
             short_description: '24-hour hackathon with prizes and mentorship.',
             event_type: 'hackathon',
-            category: 'competition',
+            category: 'technical',
             start_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days from now
             end_date: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString(), // +24 hours
             registration_deadline: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),

@@ -24,8 +24,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getEventBySlug, getEventFeedback, getEventFeedbackStats } from "@/lib/supabase/event-actions";
+import { getEventBySlug, getEventFeedback, getEventFeedbackStats, getEventRegisteredUsers } from "@/lib/supabase/event-actions";
 import { EventRegistrationButton } from "@/components/events/event-registration-button";
+import { EventHeader } from "@/components/events/event-header";
+import { RegisteredUsersAvatars } from "@/components/events/registered-users-avatars";
 import {
   getEventTypeLabel,
   getEventTypeColorClass,
@@ -68,9 +70,10 @@ export default async function EventPage({
     notFound();
   }
 
-  const [feedback, feedbackStats] = await Promise.all([
+  const [feedback, feedbackStats, registeredUsers] = await Promise.all([
     getEventFeedback(event.id),
     getEventFeedbackStats(event.id),
+    getEventRegisteredUsers(event.id, 10),
   ]);
 
   const timeStatus = getEventTimeStatus(event.start_date, event.end_date);
@@ -78,20 +81,12 @@ export default async function EventPage({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Back Button */}
-      <div className="container py-4">
-        <Link href="/events">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Events
-          </Button>
-        </Link>
-      </div>
+      <EventHeader showBack={true} backHref="/events" title="Event Details" />
 
       {/* Hero Section */}
       <div className="relative">
         {event.banner_image_url ? (
-          <div className="relative h-64 md:h-96">
+          <div className="relative h-80 md:h-[500px]">
             <Image
               src={event.banner_image_url}
               alt={event.title}
@@ -99,15 +94,17 @@ export default async function EventPage({
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
           </div>
         ) : (
-          <div className="h-48 md:h-64 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+          <div className="h-64 md:h-96 bg-gradient-to-br from-primary/20 via-primary/10 to-background relative">
+            <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+          </div>
         )}
 
         {/* Event Info Overlay */}
-        <div className="container relative -mt-32 md:-mt-48 pb-8">
-          <div className="bg-card rounded-xl shadow-lg p-6 md:p-8 border">
+        <div className="container mx-auto relative -mt-40 md:-mt-64 pb-8 px-4 max-w-7xl">
+          <div className="bg-card/95 backdrop-blur-lg rounded-2xl shadow-2xl border p-6 md:p-10 transition-all hover:shadow-3xl">
             <div className="flex flex-wrap gap-2 mb-4">
               <Badge className={getEventTypeColorClass(event.event_type)}>
                 {getEventTypeLabel(event.event_type)}
@@ -186,20 +183,22 @@ export default async function EventPage({
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Users className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Attendees</p>
-                  <p className="font-medium">
-                    {event.registrations_count}
-                    {event.max_capacity && ` / ${event.max_capacity}`}
-                  </p>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground mb-1">Attendees</p>
+                  <RegisteredUsersAvatars
+                    users={registeredUsers}
+                    maxDisplay={5}
+                    totalCount={event.registrations_count}
+                    size="sm"
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 items-center">
-              <EventRegistrationButton event={event} className="min-w-[200px]" />
-              <Button variant="outline" size="icon">
-                <Share2 className="h-4 w-4" />
+            <div className="flex flex-wrap gap-4 items-center pt-2">
+              <EventRegistrationButton event={event} className="min-w-[200px] h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" />
+              <Button variant="outline" size="icon" className="h-12 w-12 rounded-full hover:scale-105 transition-transform">
+                <Share2 className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -207,7 +206,7 @@ export default async function EventPage({
       </div>
 
       {/* Content */}
-      <div className="container py-8">
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">

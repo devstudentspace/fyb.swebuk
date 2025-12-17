@@ -223,7 +223,7 @@ export async function postBlogComment(blogId: string, content: string, parentId?
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -251,7 +251,7 @@ export async function updateBlogComment(commentId: string, content: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -278,7 +278,7 @@ export async function deleteBlogComment(commentId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -305,7 +305,7 @@ export async function toggleBlogLike(blogId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated", liked: false };
@@ -350,7 +350,7 @@ export async function checkBlogLiked(blogId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return false;
@@ -555,7 +555,7 @@ export async function getCurrentUser() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   return user;
 }

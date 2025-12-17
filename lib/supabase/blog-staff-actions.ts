@@ -65,7 +65,7 @@ async function checkUserRole(allowedRoles: string[]) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { authorized: false, error: "Not authenticated", user: null, profile: null };
@@ -92,7 +92,7 @@ export async function getPendingBlogs(clusterId?: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return [];
 
@@ -191,7 +191,7 @@ export async function approveBlog(blogId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -262,7 +262,7 @@ export async function rejectBlog(blogId: string, reason: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };

@@ -40,12 +40,12 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // (supabase.auth as any).getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
   // IMPORTANT: If you remove getUser() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await (supabase.auth as any).getUser();
 
   if (user) {
     // Fetch role from profiles table instead of user metadata
@@ -88,8 +88,12 @@ export async function updateSession(request: NextRequest) {
 
       // Check if the segment after /dashboard/ is a known role segment
       if (userRoleSegment && knownRoleSegments.includes(userRoleSegment)) {
+        // Admins can access staff routes
+        const isAdminAccessingStaff = userRole === 'admin' && userRoleSegment === 'staff';
+
         // If user is trying to access another role's dashboard section (main or sub-pages)
-        if (userRoleSegment !== userRole) {
+        // Allow admins to access staff pages
+        if (userRoleSegment !== userRole && !isAdminAccessingStaff) {
           const url = request.nextUrl.clone();
           url.pathname = `/dashboard/${userRole}`;
           return NextResponse.redirect(url);

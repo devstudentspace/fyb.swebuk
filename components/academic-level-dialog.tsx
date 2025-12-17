@@ -12,12 +12,11 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
-import { User } from '@supabase/supabase-js';
 
 type AcademicLevel = 'level_100' | 'level_200' | 'level_300' | 'level_400' | 'alumni' | 'student' | '400' | '300' | '200' | '100';
 
 interface AcademicLevelDialogProps {
-  user: User;
+  user: any;
   currentLevel?: string;
   onLevelUpdate?: (newLevel: string) => void;
 }

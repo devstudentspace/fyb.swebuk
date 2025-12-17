@@ -58,7 +58,7 @@ export function BlogForm({ blog, userRole, onSuccess }: BlogFormProps) {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await (supabase.auth as any).getUser();
 
       if (!user) return;
 

@@ -210,7 +210,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogs.map((blog) => (
+              {blogs.map((blog: DetailedBlog) => (
                 <BlogCard key={blog.id} blog={blog} />
               ))}
             </div>

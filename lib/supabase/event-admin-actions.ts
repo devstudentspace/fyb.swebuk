@@ -16,7 +16,7 @@ async function checkAdminPermission() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return { allowed: false, user: null, supabase };
 

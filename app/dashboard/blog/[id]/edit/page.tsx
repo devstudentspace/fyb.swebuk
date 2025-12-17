@@ -30,7 +30,7 @@ export default function EditBlogPage({ params }: EditBlogPageProps) {
         const supabase = createClient();
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await (supabase.auth as any).getUser();
 
         if (user) {
           const { data: profile } = await supabase

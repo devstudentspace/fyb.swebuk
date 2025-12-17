@@ -17,27 +17,29 @@ export function Navigation() {
   const router = useRouter();
 
   useEffect(() => {
+    const supabase = createClient();
+
     const getUser = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       setUser(user);
       setLoading(false);
     };
 
     getUser();
 
-    // Listen for auth changes
-    const { data: { subscription } } = createClient().auth.onAuthStateChange((_event, session) => {
+    // Listen for auth changes using getSession polling
+    const authInterval = setInterval(async () => {
+      const { data: { session } } = await (supabase.auth as any).getSession();
       setUser(session?.user ?? null);
-    });
+    }, 5000);
 
-    return () => subscription.unsubscribe();
+    return () => clearInterval(authInterval);
   }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
     setIsLoggingOut(true);
-    await supabase.auth.signOut();
+    await (supabase.auth as any).signOut();
     setIsMenuOpen(false); // Close menu after logout
     router.push("/");
   };

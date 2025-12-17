@@ -17,7 +17,7 @@ export async function getMyRegistrations(status?: RegistrationStatus) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return [];
 
@@ -50,7 +50,7 @@ export async function getMyUpcomingRegistrations() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return [];
 
@@ -79,7 +79,7 @@ export async function getMyPastRegistrations() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return [];
 
@@ -107,7 +107,7 @@ export async function getMyRegistrationForEvent(eventId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return null;
 
@@ -140,7 +140,7 @@ export async function registerForEvent(eventId: string, notes?: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -251,7 +251,7 @@ export async function cancelRegistration(eventId: string, reason?: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -322,7 +322,7 @@ export async function submitEventFeedback(
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -381,7 +381,7 @@ export async function getMyFeedbackForEvent(eventId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return null;
 
@@ -412,7 +412,7 @@ export async function updateMyFeedback(
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -444,7 +444,7 @@ export async function getMyCertificates() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return [];
 
@@ -494,7 +494,7 @@ export async function getMyCertificateForEvent(eventId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return null;
 
@@ -522,7 +522,7 @@ export async function downloadCertificate(certificateId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { success: false, error: "Not authenticated" };
@@ -575,7 +575,7 @@ export async function getMyEventStats() {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) return null;
 
@@ -614,7 +614,7 @@ export async function checkRegistrationStatus(eventId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await (supabase.auth as any).getUser();
 
   if (!user) {
     return { isRegistered: false, status: null };

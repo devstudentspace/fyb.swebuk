@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
   Select,
   SelectContent,
@@ -46,29 +47,71 @@ export default function CreateEventPage() {
     certificate_enabled: false,
   });
 
+  // Convert string dates to Date objects for the picker
+  const startDate = formData.start_date ? new Date(formData.start_date) : undefined;
+  const endDate = formData.end_date ? new Date(formData.end_date) : undefined;
+  const registrationDeadline = formData.registration_deadline
+    ? new Date(formData.registration_deadline)
+    : undefined;
+
   const handleSubmit = async (saveAsDraft: boolean) => {
-    if (!formData.title || !formData.description || !formData.start_date || !formData.end_date) {
-      toast.error("Please fill in all required fields");
+    // Specific validation messages
+    const missingFields: string[] = [];
+
+    if (!formData.title?.trim()) {
+      missingFields.push("Event Title");
+    }
+    if (!formData.description?.trim()) {
+      missingFields.push("Description");
+    }
+    if (!formData.start_date) {
+      missingFields.push("Start Date & Time");
+    }
+    if (!formData.end_date) {
+      missingFields.push("End Date & Time");
+    }
+
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in the following required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    // Validate dates
+    const startDateObj = new Date(formData.start_date!);
+    const endDateObj = new Date(formData.end_date!);
+
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+      toast.error("Please provide valid dates and times");
+      return;
+    }
+
+    if (endDateObj <= startDateObj) {
+      toast.error("End date and time must be after start date and time");
       return;
     }
 
     setLoading(true);
 
-    const result = await createEvent({
-      ...formData,
-      saveAsDraft,
-    } as CreateEventData);
+    try {
+      const result = await createEvent({
+        ...formData,
+        saveAsDraft,
+      } as CreateEventData);
 
-    if (result.success) {
-      toast.success(
-        saveAsDraft ? "Event saved as draft" : "Event published successfully"
-      );
-      router.push("/dashboard/staff/events");
-    } else {
-      toast.error(result.error || "Failed to create event");
+      if (result.success) {
+        toast.success(
+          saveAsDraft ? "Event saved as draft" : "Event published successfully"
+        );
+        router.push("/dashboard/staff/events");
+      } else {
+        toast.error(result.error || "Failed to create event");
+      }
+    } catch (error) {
+      console.error("Error submitting event:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -207,56 +250,49 @@ export default function CreateEventPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">
+                  <Label>
                     Start Date & Time <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="start_date"
-                    type="datetime-local"
-                    value={formData.start_date?.slice(0, 16) || ""}
-                    onChange={(e) =>
+                  <DateTimePicker
+                    date={startDate}
+                    setDate={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        start_date: new Date(e.target.value).toISOString(),
-                      }))
-                    }
+                        start_date: date?.toISOString(),
+                      }));
+                    }}
+                    placeholder="Select start date & time"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">
+                  <Label>
                     End Date & Time <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="end_date"
-                    type="datetime-local"
-                    value={formData.end_date?.slice(0, 16) || ""}
-                    onChange={(e) =>
+                  <DateTimePicker
+                    date={endDate}
+                    setDate={(date) => {
                       setFormData((prev) => ({
                         ...prev,
-                        end_date: new Date(e.target.value).toISOString(),
-                      }))
-                    }
+                        end_date: date?.toISOString(),
+                      }));
+                    }}
+                    placeholder="Select end date & time"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="registration_deadline">
-                  Registration Deadline
-                </Label>
-                <Input
-                  id="registration_deadline"
-                  type="datetime-local"
-                  value={formData.registration_deadline?.slice(0, 16) || ""}
-                  onChange={(e) =>
+                <Label>Registration Deadline</Label>
+                <DateTimePicker
+                  date={registrationDeadline}
+                  setDate={(date) => {
                     setFormData((prev) => ({
                       ...prev,
-                      registration_deadline: e.target.value
-                        ? new Date(e.target.value).toISOString()
-                        : undefined,
-                    }))
-                  }
+                      registration_deadline: date?.toISOString(),
+                    }));
+                  }}
+                  placeholder="Select registration deadline (optional)"
                 />
                 <p className="text-xs text-muted-foreground">
                   Leave empty to allow registration until event starts

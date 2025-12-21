@@ -78,8 +78,8 @@ export function RegistrationConfirmationModal({
           icon: CheckCircle2,
           iconColor: "text-blue-500",
           bgGradient: "from-blue-500/20 via-blue-500/10 to-transparent",
-          title: hasAccount ? "Account Found" : "Already Registered",
-          subtitle: message || (hasAccount ? "Please sign in to continue" : "You're already signed up for this event"),
+          title: "Already Registered",
+          subtitle: message || "You're already signed up for this event",
         };
       default:
         return {

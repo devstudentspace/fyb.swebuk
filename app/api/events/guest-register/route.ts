@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // Check if event exists and is published
     const { data: event, error: eventError } = await supabase
       .from("events")
-      .select("id, title, status, is_registration_required, max_capacity")
+      .select("id, title, slug, start_date, end_date, status, is_registration_required, max_capacity")
       .eq("id", eventId)
       .single();
 
@@ -70,10 +70,16 @@ export async function POST(request: NextRequest) {
       if (existingRegistration) {
         return NextResponse.json(
           {
-            error: `You've already registered for this event! Please sign in to view your registration.`,
+            error: `You're already registered for this event! Sign in to view your registration.`,
             hasAccount: true,
             alreadyRegistered: true,
             registrationStatus: existingRegistration.status,
+            eventDetails: {
+              title: event.title,
+              slug: event.slug,
+              start_date: event.start_date,
+              end_date: event.end_date,
+            },
           },
           { status: 400 }
         );
@@ -83,8 +89,8 @@ export async function POST(request: NextRequest) {
       // (Instead of prompting to login, we'll register them automatically)
     }
 
-    // Check capacity
-    if (event.max_capacity) {
+    // Check capacity for users with accounts
+    if (userId && event.max_capacity) {
       const { count } = await supabase
         .from("event_registrations")
         .select("*", { count: "exact", head: true })
@@ -93,31 +99,47 @@ export async function POST(request: NextRequest) {
 
       if (count && count >= event.max_capacity) {
         // Event is full - add to waitlist
-        if (userId) {
-          const { error: insertError } = await supabase
-            .from("event_registrations")
-            .insert({
-              event_id: eventId,
-              user_id: userId,
-              status: "waitlisted",
-            });
-
-          if (insertError) {
-            throw insertError;
-          }
-
-          return NextResponse.json({
-            success: true,
-            message: "Added to waitlist. We'll notify you if a spot opens up.",
+        const { error: insertError } = await supabase
+          .from("event_registrations")
+          .insert({
+            event_id: eventId,
+            user_id: userId,
             status: "waitlisted",
           });
-        } else {
-          return NextResponse.json(
-            { error: "Event is full. Please create an account to join the waitlist." },
-            { status: 400 }
-          );
+
+        if (insertError) {
+          throw insertError;
         }
+
+        return NextResponse.json({
+          success: true,
+          message: "Event is full. You've been added to the waitlist. We'll notify you if a spot opens up!",
+          status: "waitlisted",
+          hasAccount: true,
+        });
       }
+    }
+
+    // Register user with account
+    if (userId) {
+      const { error: insertError } = await supabase
+        .from("event_registrations")
+        .insert({
+          event_id: eventId,
+          user_id: userId,
+          status: "registered",
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Registration successful! Sign in to view and manage your registration.`,
+        hasAccount: true,
+        status: "registered",
+      });
     }
 
     // At this point, user doesn't have an account - create guest registration
@@ -136,6 +158,13 @@ export async function POST(request: NextRequest) {
           error: `This email is already registered for this event as a guest! Check your email for confirmation details.`,
           alreadyRegistered: true,
           registrationStatus: existingGuestReg.status,
+          hasAccount: false,
+          eventDetails: {
+            title: event.title,
+            slug: event.slug,
+            start_date: event.start_date,
+            end_date: event.end_date,
+          },
         },
         { status: 400 }
       );

@@ -41,6 +41,10 @@ export function GuestRegistrationDialog({
   >("success");
   const [confirmationMessage, setConfirmationMessage] = useState("");
   const [hasAccount, setHasAccount] = useState(false);
+  const [confirmationEventDetails, setConfirmationEventDetails] = useState<{
+    title?: string;
+    start_date?: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +103,20 @@ export function GuestRegistrationDialog({
           // Other errors
           setConfirmationStatus("error");
           setConfirmationMessage(data.error || "Failed to register");
+        }
+
+        // Store event details if provided
+        if (data.eventDetails) {
+          setConfirmationEventDetails({
+            title: data.eventDetails.title,
+            start_date: data.eventDetails.start_date,
+          });
+        } else {
+          // Fallback to props
+          setConfirmationEventDetails({
+            title: eventTitle,
+            start_date: eventDate,
+          });
         }
 
         // Close form dialog and show confirmation modal
@@ -224,10 +242,19 @@ export function GuestRegistrationDialog({
       onOpenChange={setShowConfirmation}
       status={confirmationStatus}
       message={confirmationMessage}
-      eventTitle={eventTitle}
+      eventTitle={confirmationEventDetails?.title || eventTitle}
       hasAccount={hasAccount}
       additionalInfo={{
-        eventDate: eventDate,
+        eventDate: confirmationEventDetails?.start_date
+          ? new Date(confirmationEventDetails.start_date).toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })
+          : eventDate,
       }}
     />
     </>

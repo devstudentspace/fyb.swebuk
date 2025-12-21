@@ -78,8 +78,8 @@ export function RegistrationConfirmationModal({
           icon: CheckCircle2,
           iconColor: "text-blue-500",
           bgGradient: "from-blue-500/20 via-blue-500/10 to-transparent",
-          title: "Already Registered",
-          subtitle: message || "You're already signed up for this event",
+          title: hasAccount ? "Account Found" : "Already Registered",
+          subtitle: message || (hasAccount ? "Please sign in to continue" : "You're already signed up for this event"),
         };
       default:
         return {
@@ -304,10 +304,18 @@ export function RegistrationConfirmationModal({
                       </Link>
                     )}
 
-                    {status === "existing" && (
-                      <Link href="/auth/signin">
+                    {status === "existing" && hasAccount && (
+                      <Link href="/auth/login">
                         <Button className="w-full" size="lg" variant="default">
-                          Sign In to Manage
+                          Sign In to Continue
+                        </Button>
+                      </Link>
+                    )}
+
+                    {status === "existing" && !hasAccount && (
+                      <Link href="/auth/login">
+                        <Button className="w-full" size="lg" variant="default">
+                          View Registration
                         </Button>
                       </Link>
                     )}

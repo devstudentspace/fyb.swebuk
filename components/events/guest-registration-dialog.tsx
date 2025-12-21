@@ -80,12 +80,29 @@ export function GuestRegistrationDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.error?.includes("already registered")) {
+        // Handle different error scenarios
+        if (data.promptLogin || data.hasAccount) {
+          // User has an account - show login prompt
           setConfirmationStatus("existing");
-        } else {
+          setConfirmationMessage(data.error || "An account exists with this email. Please sign in to continue.");
+          setHasAccount(true);
+        } else if (data.alreadyRegistered) {
+          // Already registered
+          setConfirmationStatus("existing");
+          setConfirmationMessage(data.error || "You're already registered for this event.");
+          setHasAccount(data.hasAccount || false);
+        } else if (data.requiresAccount) {
+          // Guest registration not available
           setConfirmationStatus("error");
+          setConfirmationMessage(data.error || "Please create an account to register.");
+        } else {
+          // Other errors
+          setConfirmationStatus("error");
+          setConfirmationMessage(data.error || "Failed to register");
         }
-        setConfirmationMessage(data.error || "Failed to register");
+
+        // Close form dialog and show confirmation modal
+        onOpenChange(false);
         setShowConfirmation(true);
         return;
       }
@@ -117,6 +134,7 @@ export function GuestRegistrationDialog({
           : "Failed to register for event";
       setConfirmationStatus("error");
       setConfirmationMessage(message);
+      onOpenChange(false);
       setShowConfirmation(true);
     } finally {
       setLoading(false);
@@ -130,9 +148,13 @@ export function GuestRegistrationDialog({
         <DialogHeader>
           <DialogTitle>Register for Event</DialogTitle>
           <DialogDescription>
-            Register for &quot;{eventTitle}&quot; by providing your details below.
-            If you have an account with this email, we&apos;ll link it automatically.
+            Enter your details to register for &quot;{eventTitle}&quot;.
           </DialogDescription>
+          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-xs text-blue-900 dark:text-blue-200">
+              <strong>Note:</strong> If you have an existing account, you&apos;ll be prompted to sign in.
+            </p>
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">

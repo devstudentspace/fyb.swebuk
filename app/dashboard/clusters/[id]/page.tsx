@@ -89,6 +89,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
   const [userMembershipStatus, setUserMembershipStatus] = useState<string | null>(null);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -123,20 +124,38 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         setCluster(clusterData);
 
         // Check if user is a member of this cluster
+        // Only consider approved memberships - pending requests should not count as membership
         if (user.id) {
+          // Check for approved membership
           const { data: membershipData, error: membershipError } = await supabase
             .from("cluster_members")
             .select("status")
             .eq("cluster_id", clusterId)
             .eq("user_id", user.id)
-            .single();
+            .eq("status", "approved")
+            .maybeSingle();
 
-          if (membershipData) {
+          // Check for pending request
+          const { data: pendingData } = await supabase
+            .from("cluster_members")
+            .select("status")
+            .eq("cluster_id", clusterId)
+            .eq("user_id", user.id)
+            .eq("status", "pending")
+            .maybeSingle();
+
+          if (membershipData && membershipData.status === "approved") {
             setIsMember(true);
             setUserMembershipStatus(membershipData.status);
+            setHasPendingRequest(false);
+          } else if (pendingData && pendingData.status === "pending") {
+            setIsMember(false); // Not a member yet
+            setUserMembershipStatus("pending");
+            setHasPendingRequest(true);
           } else {
             setIsMember(false);
             setUserMembershipStatus(null);
+            setHasPendingRequest(false);
           }
         }
       } catch (err) {
@@ -178,9 +197,10 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         }
       } else {
         toast.success("Request to join cluster sent! Wait for approval.");
-        // Update membership status
-        setIsMember(true);
+        // Update membership status - user has pending request but is not yet a member
+        setIsMember(false); // Not a member yet (only approved members see Requests tab)
         setUserMembershipStatus("pending");
+        setHasPendingRequest(true);
       }
     } catch (error: any) {
       console.error("Error joining cluster:", error);
@@ -199,20 +219,21 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
 
     try {
       const supabase = createClient();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("cluster_members")
         .delete()
         .eq("cluster_id", cluster!.id)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select();
 
       if (error) throw error;
 
-      toast.success("Successfully left the cluster");
-      // Update membership status
+      const message = userMembershipStatus === "pending" ? "Request cancelled successfully" : "Successfully left the cluster";
+      toast.success(message);
+      // Update membership status - this will also hide the Requests tab
       setIsMember(false);
       setUserMembershipStatus(null);
-      // Refresh the page to update all data
-      router.refresh ? router.refresh() : window.location.reload();
+      setHasPendingRequest(false);
     } catch (error: any) {
       console.error("Error leaving cluster:", error);
       toast.error("Failed to leave cluster: " + error.message);
@@ -289,13 +310,13 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
               </a>
             </Button>
           )}
-          {!isMember && userRole === 'student' && (
+          {!isMember && !hasPendingRequest && userRole === 'student' && (
             <Button onClick={handleJoinClick}>
               <Plus className="mr-2 h-4 w-4" />
               Join Cluster
             </Button>
           )}
-          {isMember && userMembershipStatus === "pending" && (
+          {hasPendingRequest && (
             <Button variant="outline" onClick={handleLeaveClick}>
               Cancel Request
             </Button>
@@ -426,7 +447,7 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
         </div>
 
         <Tabs defaultValue={searchParams.get("tab") || "members"} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid ${isMember || hasPendingRequest || canManage ? "grid-cols-4" : "grid-cols-3"}`}>
             <TabsTrigger value="members" className="flex items-center gap-2">
               <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               Members ({cluster.members_count})
@@ -439,23 +460,43 @@ export default function ClusterInfoPage({ params }: { params: { id: string } }) 
               <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
               Events
             </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              Requests
-            </TabsTrigger>
+            {(isMember || hasPendingRequest || canManage) && (
+              <TabsTrigger value="requests" className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                Requests
+              </TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="members" className="mt-4">
             <ClusterMembersList clusterId={cluster.id} userRole={userRole || "student"} canManage={canManage} />
           </TabsContent>
           <TabsContent value="projects" className="mt-4">
-            <ClusterProjectsList clusterId={cluster.id} userRole={userRole || "student"} />
+            <ClusterProjectsList clusterId={cluster.id} userRole={userRole || "student"} userId={user?.id} isMember={isMember} canManage={canManage} />
           </TabsContent>
           <TabsContent value="events" className="mt-4">
-            <ClusterEventsList clusterId={cluster.id} userRole={userRole || "student"} />
+            <ClusterEventsList
+              clusterId={cluster.id}
+              userRole={userRole || "student"}
+              userId={user?.id}
+              isMember={isMember}
+              canManage={canManage}
+            />
           </TabsContent>
-          <TabsContent value="requests" className="mt-4">
-            <ClusterRequestsList clusterId={cluster.id} userRole={userRole || "student"} canManage={canManage} />
-          </TabsContent>
+          {(isMember || hasPendingRequest || canManage) && (
+            <TabsContent value="requests" className="mt-4">
+              <ClusterRequestsList
+                clusterId={cluster.id}
+                userRole={userRole || "student"}
+                userId={user?.id}
+                hasPendingRequest={hasPendingRequest}
+                onCancelRequest={() => {
+                  setHasPendingRequest(false);
+                  setUserMembershipStatus(null);
+                }}
+                canManage={canManage}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

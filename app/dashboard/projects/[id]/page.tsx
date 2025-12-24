@@ -106,6 +106,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true);
   const [isMember, setIsMember] = useState(false);
   const [userMembershipStatus, setUserMembershipStatus] = useState<string | null>(null);
+  const [isClusterMember, setIsClusterMember] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -157,6 +158,20 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           } else {
             setIsMember(false);
             setUserMembershipStatus(null);
+          }
+
+          // Check if user is a cluster member (for cluster projects)
+          if (projectData.type === "cluster" && projectData.cluster_id) {
+            const { data: clusterMemberData } = await supabase
+              .from("cluster_members")
+              .select("status")
+              .eq("cluster_id", projectData.cluster_id)
+              .eq("user_id", user.id)
+              .single();
+
+            if (clusterMemberData && clusterMemberData.status === "approved") {
+              setIsClusterMember(true);
+            }
           }
 
           // Fetch current user profile for chat
@@ -293,6 +308,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
 
   const isOwner = project.owner_id === user?.id;
   const canManage = isOwner || userRole === 'admin';
+  const canUpload = (isMember && userMembershipStatus === "approved") || isClusterMember || isOwner;
 
   return (
     <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
@@ -602,7 +618,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         <TabsContent value="files" className="mt-4">
           <ProjectFiles
             projectId={project.id}
-            canUpload={isMember && userMembershipStatus === "approved"}
+            canUpload={canUpload}
             currentUserId={user?.id || ""}
           />
         </TabsContent>

@@ -437,8 +437,8 @@ export default function CreateClusterEventPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {LOCATION_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -50,24 +50,22 @@ export function StudentClusterStats({ clusterId }: StudentClusterStatsProps) {
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Projects</CardTitle>
-          <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{loading ? "—" : stats.projects}</div>
-        </CardContent>
-      </Card>
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Events</CardTitle>
-          <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{loading ? "—" : stats.events}</div>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-white/10 backdrop-blur-xl p-6 hover:scale-105 transition-all duration-300">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-slate-400">Projects</p>
+          <FileText className="h-5 w-5 text-blue-400" />
+        </div>
+        <p className="text-3xl font-bold text-white">{loading ? "—" : stats.projects}</p>
+        <p className="text-xs text-slate-400 mt-1">Active projects</p>
+      </div>
+      <div className="rounded-2xl bg-gradient-to-br from-green-500/20 to-teal-500/20 border border-white/10 backdrop-blur-xl p-6 hover:scale-105 transition-all duration-300">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-slate-400">Events</p>
+          <Calendar className="h-5 w-5 text-green-400" />
+        </div>
+        <p className="text-3xl font-bold text-white">{loading ? "—" : stats.events}</p>
+        <p className="text-xs text-slate-400 mt-1">Upcoming events</p>
+      </div>
     </>
   );
 }

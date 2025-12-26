@@ -1,32 +1,36 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import PortfolioPageWrapper from "@/components/portfolio-page-wrapper";
+import { redirect, notFound } from "next/navigation";
+import PublicPortfolioView from "@/components/public-portfolio-view";
 
-export default async function PortfolioPage() {
+export default async function PublicPortfolioPage({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
   const supabase = await createClient();
+  const { userId } = await params;
 
+  // Get current logged-in user (if any)
   const {
-    data: { user },
+    data: { user: currentUser },
   } = await (supabase.auth as any).getUser();
 
-  if (!user) {
-    return redirect("/auth/login");
-  }
-
-  // Fetch user profile
+  // Fetch the profile of the user whose portfolio we're viewing
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
   if (profileError || !profileData) {
-    console.error('Error fetching profile or profile not found:', profileError);
-    return <div>User profile not found.</div>;
+    console.error("Error fetching profile or profile not found:", profileError);
+    return notFound();
   }
 
-  // Fetch user projects
-  const { data: ownedProjects } = await supabase
+  // Fetch user projects (only public projects or if user is viewing their own profile)
+  const isOwnProfile = currentUser?.id === userId;
+
+  let projectsQuery = supabase
     .from("projects")
     .select(`
       id,
@@ -43,21 +47,28 @@ export default async function PortfolioPage() {
       demo_url,
       project_tags (tag)
     `)
-    .eq("owner_id", user.id)
+    .eq("owner_id", userId)
     .order("updated_at", { ascending: false });
+
+  // If not viewing own profile, only show public projects
+  if (!isOwnProfile) {
+    projectsQuery = projectsQuery.eq("visibility", "public");
+  }
+
+  const { data: ownedProjects } = await projectsQuery;
 
   // Fetch member projects
   const { data: memberProjectIds } = await supabase
     .from("project_members")
     .select("project_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("status", "approved");
 
   const projectIds = memberProjectIds?.map((mp: any) => mp.project_id) || [];
   let memberProjects: any[] = [];
 
   if (projectIds.length > 0) {
-    const { data: projectsData } = await supabase
+    let memberProjectsQuery = supabase
       .from("projects")
       .select(`
         id,
@@ -76,6 +87,13 @@ export default async function PortfolioPage() {
       `)
       .in("id", projectIds)
       .order("updated_at", { ascending: false });
+
+    // If not viewing own profile, only show public projects
+    if (!isOwnProfile) {
+      memberProjectsQuery = memberProjectsQuery.eq("visibility", "public");
+    }
+
+    const { data: projectsData } = await memberProjectsQuery;
     memberProjects = projectsData || [];
   }
 
@@ -83,24 +101,12 @@ export default async function PortfolioPage() {
   let allProjects: any[] = [];
   if (ownedProjects) allProjects = [...ownedProjects];
   if (memberProjects) {
-    const uniqueMemberProjects = memberProjects.filter(memberProj =>
-      !ownedProjects?.some(ownedProj => ownedProj.id === memberProj.id)
+    const uniqueMemberProjects = memberProjects.filter(
+      (memberProj) =>
+        !ownedProjects?.some((ownedProj) => ownedProj.id === memberProj.id)
     );
     allProjects = [...allProjects, ...uniqueMemberProjects];
   }
-
-  // Format academic level
-  const formatAcademicLevel = (level: string | undefined) => {
-    if (!level) return "Professional";
-    switch(level) {
-      case 'level_100': return 'Level 100';
-      case 'level_200': return 'Level 200';
-      case 'level_300': return 'Level 300';
-      case 'level_400': return 'Level 400';
-      case 'alumni': return 'Alumni';
-      default: return level.charAt(0).toUpperCase() + level.slice(1);
-    }
-  };
 
   // Generate URL for avatar server-side
   let avatarPublicUrl = null;
@@ -133,22 +139,22 @@ export default async function PortfolioPage() {
     }
   }
 
+  // Fetch email from auth.users table
+  const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+
   // Pass avatar URL and email to client component
   const profileDataWithAvatarUrl = {
     ...profileData,
     avatar_url: avatarPublicUrl || profileData.avatar_url,
-    email: user.email, // Add email from auth
+    email: authUser?.user?.email || profileData.email, // Add email from auth
   };
 
   return (
-    <div className="min-h-screen w-full bg-black text-white overflow-x-hidden">
-      <div className="relative min-h-screen w-full pt-8 pb-12">
-        <PortfolioPageWrapper
-          profile={profileDataWithAvatarUrl}
-          projects={allProjects}
-          editProfileUrl={`/dashboard/${profileData.role?.toLowerCase() || "student"}/profile`}
-        />
-      </div>
-    </div>
+    <PublicPortfolioView
+      profile={profileDataWithAvatarUrl}
+      projects={allProjects}
+      isOwnProfile={isOwnProfile}
+      currentUserId={currentUser?.id}
+    />
   );
 }

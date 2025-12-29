@@ -200,12 +200,12 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
   const NavContent = () => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 border-b border-border">
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20">
             <ShieldCheck className="h-6 w-6 text-white" />
           </div>
-          <span className="text-xl font-bold text-white">{getDashboardTitle()}</span>
+          <span className="text-xl font-bold text-foreground">{getDashboardTitle()}</span>
         </Link>
       </div>
 
@@ -218,7 +218,7 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
           return (
             <div key={sectionTitle}>
               {sectionIndex > 0 && (
-                <div className="border-t border-white/10 my-3" />
+                <div className="border-t border-border my-3" />
               )}
               <div className="space-y-1">
               {isProjectsSection ? (
@@ -228,7 +228,7 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
                     onClick={() => setIsProjectsOpen(!isProjectsOpen)}
                     className={cn(
                       "flex w-full items-center justify-between rounded-lg px-4 py-2.5 font-medium transition-all duration-300 group",
-                      "text-slate-400 hover:bg-white/10 hover:text-white"
+                      "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
                           className={cn(
                             "flex items-center gap-2.5 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300",
                             "transform hover:translate-x-1",
-                            "text-slate-400 hover:bg-white/10 hover:text-white"
+                            "text-muted-foreground hover:bg-secondary hover:text-foreground"
                           )}
                           style={{
                             transitionDelay: isProjectsOpen ? `${index * 30}ms` : '0ms'
@@ -286,8 +286,8 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
                         className={cn(
                           "flex items-center gap-3 rounded-lg px-4 py-2.5 font-medium transition-all duration-300 group",
                           isActive
-                            ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-white border-l-4 border-emerald-500 shadow-lg shadow-emerald-500/20"
-                            : "text-slate-400 hover:bg-white/10 hover:text-white"
+                            ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-700 dark:text-white border-l-4 border-emerald-500 shadow-lg shadow-emerald-500/20"
+                            : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                         )}
                       >
                         <Icon className={cn(
@@ -313,14 +313,14 @@ export function DashboardNav({ userId, userProfileRole, userAcademicLevel, isSid
       {/* Mobile Sidebar */}
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden transition-opacity duration-300",
+          "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden transition-opacity duration-300",
           isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={() => setIsSidebarOpen(false)}
       />
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-black/95 backdrop-blur-xl transition-transform md:relative md:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-card backdrop-blur-xl transition-transform md:relative md:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

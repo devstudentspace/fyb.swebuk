@@ -31,6 +31,13 @@ export function ChapterProgressTracker({ chapters, progressPercentage, githubRep
   const [isEditingGithub, setIsEditingGithub] = useState(false);
   const [githubUrl, setGithubUrl] = useState(githubRepoUrl || "");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Calculate progress based on approved chapters
+  const approvedChapters = chapters.filter(c => c.status === 'approved').length;
+  const calculatedProgress = chapters.length > 0
+    ? Math.min(Math.round((approvedChapters / chapters.length) * 100), 100)
+    : progressPercentage;
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
@@ -91,11 +98,11 @@ export function ChapterProgressTracker({ chapters, progressPercentage, githubRep
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="font-medium">Overall Progress</span>
-            <span className="font-bold">{progressPercentage}%</span>
+            <span className="font-bold">{calculatedProgress}%</span>
           </div>
-          <Progress value={progressPercentage} className="h-3" />
+          <Progress value={calculatedProgress} className="h-3" />
           <p className="text-xs text-muted-foreground">
-            {chapters.filter(c => c.status === 'approved').length} of {chapters.length} components approved
+            {approvedChapters} of {chapters.length} components approved
           </p>
         </div>
 

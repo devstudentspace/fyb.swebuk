@@ -235,18 +235,18 @@ export default function ModernPortfolioPage({
       <div className="mb-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Portfolio Overview
             </h1>
-            <p className="text-slate-400 mt-2">
-              Welcome back, <span className="text-white font-medium">{profile.full_name?.split(' ')[0]}</span>
+            <p className="text-muted-foreground mt-2">
+              Welcome back, <span className="text-foreground font-medium">{profile.full_name?.split(' ')[0]}</span>
             </p>
           </div>
           
           <div className="flex gap-3">
             <Button
               variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-border text-foreground hover:bg-secondary"
               onClick={handleCopyPortfolioLink}
             >
               {linkCopied ? (
@@ -264,7 +264,7 @@ export default function ModernPortfolioPage({
 
             <Button
               variant="outline"
-              className="border-white/20 text-white hover:bg-white/10"
+              className="border-border text-foreground hover:bg-secondary"
               onClick={handleViewPublicProfile}
             >
               <Eye className="w-4 h-4 mr-2" />
@@ -285,55 +285,55 @@ export default function ModernPortfolioPage({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         <motion.div 
           whileHover={{ scale: 1.03 }}
-          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 flex flex-col items-center text-center"
+          className="rounded-2xl border border-border bg-card shadow-sm p-5 flex flex-col items-center text-center"
         >
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-500 mb-2">
             <FolderOpen className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-white">{projectCount}</span>
-          <span className="text-sm text-slate-400">Projects</span>
+          <span className="text-2xl font-bold text-foreground">{projectCount}</span>
+          <span className="text-sm text-muted-foreground">Projects</span>
         </motion.div>
 
         <motion.div 
           whileHover={{ scale: 1.03 }}
-          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 flex flex-col items-center text-center"
+          className="rounded-2xl border border-border bg-card shadow-sm p-5 flex flex-col items-center text-center"
         >
           <div className="p-3 rounded-xl bg-violet-500/10 text-violet-500 mb-2">
             <Code2 className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-white">{skillCount}</span>
-          <span className="text-sm text-slate-400">Skills</span>
+          <span className="text-2xl font-bold text-foreground">{skillCount}</span>
+          <span className="text-sm text-muted-foreground">Skills</span>
         </motion.div>
 
         <motion.div 
           whileHover={{ scale: 1.03 }}
-          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 flex flex-col items-center text-center"
+          className="rounded-2xl border border-border bg-card shadow-sm p-5 flex flex-col items-center text-center"
         >
           <div className="p-3 rounded-xl bg-blue-500/10 text-blue-500 mb-2">
             <Users className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-white">8</span>
-          <span className="text-sm text-slate-400">Collaborations</span>
+          <span className="text-2xl font-bold text-foreground">8</span>
+          <span className="text-sm text-muted-foreground">Collaborations</span>
         </motion.div>
 
         <motion.div 
           whileHover={{ scale: 1.03 }}
-          className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 flex flex-col items-center text-center"
+          className="rounded-2xl border border-border bg-card shadow-sm p-5 flex flex-col items-center text-center"
         >
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500 mb-2">
             <Calendar className="w-6 h-6" />
           </div>
-          <span className="text-2xl font-bold text-white">{memberSince}</span>
-          <span className="text-sm text-slate-400">Member Since</span>
+          <span className="text-2xl font-bold text-foreground">{memberSince}</span>
+          <span className="text-sm text-muted-foreground">Member Since</span>
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Profile Summary */}
         <div className="lg:col-span-1">
-          <Card className="border-0 bg-white/5 backdrop-blur-xl overflow-hidden h-full">
+          <Card className="border border-border bg-card shadow-sm overflow-hidden h-full">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <User className="w-5 h-5" />
                 Profile Summary
               </CardTitle>
@@ -341,7 +341,7 @@ export default function ModernPortfolioPage({
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl">
+                  <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-border shadow-xl">
                     {profile.avatar_url ? (
                       <img
                         src={profile.avatar_url}
@@ -350,17 +350,17 @@ export default function ModernPortfolioPage({
                       />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${roleSettings.gradient.split(' ')[0]} ${roleSettings.gradient.split(' ')[1]}`}>
-                        <span className="text-2xl font-bold text-white">{getInitials(profile.full_name || 'User')}</span>
+                        <span className="text-2xl font-bold text-foreground">{getInitials(profile.full_name || 'User')}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className={`absolute -bottom-2 -right-2 p-1.5 rounded-lg bg-black/50 border border-white/10 backdrop-blur-md z-20`}>
-                    <roleSettings.icon className="w-4 h-4 text-white" />
+                  <div className={`absolute -bottom-2 -right-2 p-1.5 rounded-lg bg-background/80 border border-border backdrop-blur-md z-20`}>
+                    <roleSettings.icon className="w-4 h-4 text-foreground" />
                   </div>
                 </div>
 
-                <h2 className="text-xl font-bold text-white mb-1">
+                <h2 className="text-xl font-bold text-foreground mb-1">
                   {profile.full_name}
                 </h2>
                 
@@ -371,92 +371,92 @@ export default function ModernPortfolioPage({
                   </Badge>
                   
                   {(isStudent || userRole === "lead" || userRole === "deputy") && profile.academic_level && (
-                    <Badge variant="outline" className="border-white/20 text-slate-300">
+                    <Badge variant="outline" className="border-border text-muted-foreground">
                       {formatAcademicLevel(profile.academic_level)}
                     </Badge>
                   )}
                 </div>
 
-                <p className="text-slate-400 text-sm mb-4 line-clamp-2">
+                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                   {profile.bio || "No bio provided. Add a short description to let others know about your interests and expertise."}
                 </p>
 
                 <div className="flex gap-2">
                   {profile.email && (
-                    <a href={`mailto:${profile.email}`} className="p-2 bg-white/5 hover:bg-white/20 hover:text-white rounded-xl transition-colors border border-white/5">
+                    <a href={`mailto:${profile.email}`} className="p-2 bg-secondary/50 hover:bg-secondary hover:text-foreground rounded-xl transition-colors border border-border">
                       <Mail className="w-4 h-4" />
                     </a>
                   )}
                   {profile.linkedin_url && (
-                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-[#0077b5]/20 hover:text-[#0077b5] rounded-xl transition-colors border border-white/5">
+                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/50 hover:bg-secondary hover:text-foreground rounded-xl transition-colors border border-border">
                       <Linkedin className="w-4 h-4" />
                     </a>
                   )}
                   {profile.github_url && (
-                    <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/20 hover:text-white rounded-xl transition-colors border border-white/5">
+                    <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/50 hover:bg-secondary hover:text-foreground rounded-xl transition-colors border border-border">
                       <Github className="w-4 h-4" />
                     </a>
                   )}
                   {profile.website_url && (
-                    <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/20 hover:text-white rounded-xl transition-colors border border-white/5">
+                    <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/50 hover:bg-secondary hover:text-foreground rounded-xl transition-colors border border-border">
                       <Globe className="w-4 h-4" />
                     </a>
                   )}
                 </div>
               </div>
 
-              <Separator className="bg-white/10" />
+              <Separator className="bg-border" />
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                  <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-slate-300 text-sm">Academic Level</h3>
-                    <p className="text-white">
+                    <h3 className="font-medium text-muted-foreground text-sm">Academic Level</h3>
+                    <p className="text-foreground">
                       {(isStudent || userRole === "lead" || userRole === "deputy") ? formatAcademicLevel(profile.academic_level) : "Professional"}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                  <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                     <Building2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-slate-300 text-sm">Department</h3>
-                    <p className="text-white">{profile.department || "N/A"}</p>
+                    <h3 className="font-medium text-muted-foreground text-sm">Department</h3>
+                    <p className="text-foreground">{profile.department || "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                  <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-slate-300 text-sm">Institution</h3>
-                    <p className="text-white">{profile.institution || "N/A"}</p>
+                    <h3 className="font-medium text-muted-foreground text-sm">Institution</h3>
+                    <p className="text-foreground">{profile.institution || "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                  <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-slate-300 text-sm">Member Since</h3>
-                    <p className="text-white">{memberSince}</p>
+                    <h3 className="font-medium text-muted-foreground text-sm">Member Since</h3>
+                    <p className="text-foreground">{memberSince}</p>
                   </div>
                 </div>
 
                 {profile.email && (
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                    <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                       <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-slate-300 text-sm">Email</h3>
+                      <h3 className="font-medium text-muted-foreground text-sm">Email</h3>
                       <a
                         href={`mailto:${profile.email}`}
                         className="text-primary hover:underline break-all"
@@ -469,11 +469,11 @@ export default function ModernPortfolioPage({
 
                 {profile.website_url && (
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-white/10 text-slate-300 flex-shrink-0">
+                    <div className="p-2 rounded-lg bg-secondary/50 text-muted-foreground flex-shrink-0">
                       <Globe className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-slate-300 text-sm">Website</h3>
+                      <h3 className="font-medium text-muted-foreground text-sm">Website</h3>
                       <a
                         href={profile.website_url}
                         target="_blank"
@@ -487,46 +487,46 @@ export default function ModernPortfolioPage({
                 )}
               </div>
 
-              <Separator className="bg-white/10" />
+              <Separator className="bg-border" />
 
               {/* Student-Specific Details */}
               {(userRole === "student" || userRole === "lead" || userRole === "deputy") && (
                 <>
                   {profile.specialization && (
                     <div className="space-y-4">
-                      <h3 className="font-medium text-slate-300 text-sm flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm flex items-center gap-2">
                         <GraduationCap className="w-4 h-4" />
                         Specialization
                       </h3>
-                      <p className="text-white">{profile.specialization}</p>
+                      <p className="text-foreground">{profile.specialization}</p>
                     </div>
                   )}
 
                   {profile.gpa && (
                     <div className="space-y-4">
-                      <h3 className="font-medium text-slate-300 text-sm flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm flex items-center gap-2">
                         <Star className="w-4 h-4" />
                         GPA
                       </h3>
-                      <p className="text-white">{profile.gpa.toFixed(2)}</p>
+                      <p className="text-foreground">{profile.gpa.toFixed(2)}</p>
                     </div>
                   )}
 
                   {profile.achievements && profile.achievements.length > 0 && (
                     <div>
-                      <h3 className="font-medium text-slate-300 text-sm mb-3 flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm mb-3 flex items-center gap-2">
                         <Award className="w-4 h-4" />
                         Achievements
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {profile.achievements.slice(0, 5).map((achievement, index) => (
-                          <Badge key={index} variant="secondary" className="px-2 py-1 rounded-full bg-white/10 border border-white/20 text-slate-200 text-xs">
+                          <Badge key={index} variant="secondary" className="px-2 py-1 rounded-full bg-secondary/50 border border-border text-foreground text-xs">
                             {achievement}
                           </Badge>
                         ))}
                       </div>
                       {profile.achievements.length > 5 && (
-                        <p className="text-xs text-slate-500 mt-2">+{profile.achievements.length - 5} more</p>
+                        <p className="text-xs text-muted-foreground mt-2">+{profile.achievements.length - 5} more</p>
                       )}
                     </div>
                   )}
@@ -538,78 +538,78 @@ export default function ModernPortfolioPage({
                 <>
                   {profile.position && (
                     <div className="space-y-4">
-                      <h3 className="font-medium text-slate-300 text-sm flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm flex items-center gap-2">
                         <Briefcase className="w-4 h-4" />
                         Position
                       </h3>
-                      <p className="text-white">{profile.position}</p>
+                      <p className="text-foreground">{profile.position}</p>
                     </div>
                   )}
 
                   {profile.qualifications && (
                     <div className="space-y-4">
-                      <h3 className="font-medium text-slate-300 text-sm flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm flex items-center gap-2">
                         <GraduationCap className="w-4 h-4" />
                         Qualifications
                       </h3>
-                      <p className="text-white">{profile.qualifications}</p>
+                      <p className="text-foreground">{profile.qualifications}</p>
                     </div>
                   )}
 
                   {profile.research_interests && profile.research_interests.length > 0 && (
                     <div>
-                      <h3 className="font-medium text-slate-300 text-sm mb-3 flex items-center gap-2">
+                      <h3 className="font-medium text-muted-foreground text-sm mb-3 flex items-center gap-2">
                         <BookOpen className="w-4 h-4" />
                         Research Interests
                       </h3>
                       <div className="flex flex-wrap gap-2">
                         {profile.research_interests.slice(0, 5).map((interest, index) => (
-                          <Badge key={index} variant="secondary" className="px-2 py-1 rounded-full bg-white/10 border border-white/20 text-slate-200 text-xs">
+                          <Badge key={index} variant="secondary" className="px-2 py-1 rounded-full bg-secondary/50 border border-border text-foreground text-xs">
                             {interest}
                           </Badge>
                         ))}
                       </div>
                       {profile.research_interests.length > 5 && (
-                        <p className="text-xs text-slate-500 mt-2">+{profile.research_interests.length - 5} more</p>
+                        <p className="text-xs text-muted-foreground mt-2">+{profile.research_interests.length - 5} more</p>
                       )}
                     </div>
                   )}
                 </>
               )}
 
-              <Separator className="bg-white/10" />
+              <Separator className="bg-border" />
 
               <div>
-                <h3 className="font-medium text-slate-300 text-sm mb-3 flex items-center gap-2">
+                <h3 className="font-medium text-muted-foreground text-sm mb-3 flex items-center gap-2">
                   <Code2 className="w-4 h-4" />
                   Skills
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {profile.skills && profile.skills.length > 0 ? (
                     profile.skills.slice(0, 6).map((skill, index) => (
-                      <Badge key={index} variant="secondary" className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-slate-200">
+                      <Badge key={index} variant="secondary" className="px-3 py-1 rounded-full bg-secondary/50 border border-border text-foreground">
                         {skill}
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-slate-500 text-sm italic">No skills added yet.</span>
+                    <span className="text-muted-foreground text-sm italic">No skills added yet.</span>
                   )}
                 </div>
                 {profile.skills && profile.skills.length > 6 && (
-                  <p className="text-xs text-slate-500 mt-2">+{profile.skills.length - 6} more skills</p>
+                  <p className="text-xs text-muted-foreground mt-2">+{profile.skills.length - 6} more skills</p>
                 )}
 
                 {(userRole === "student" || userRole === "lead" || userRole === "deputy") && profile.portfolio_items && profile.portfolio_items.length > 0 && (
                   <div>
-                    <h3 className="font-medium text-slate-300 text-sm mb-3 flex items-center gap-2">
+                    <h3 className="font-medium text-muted-foreground text-sm mb-3 flex items-center gap-2">
                       <FolderOpen className="w-4 h-4" />
                       Portfolio Items
                     </h3>
                     <div className="space-y-3">
                       {profile.portfolio_items.slice(0, 3).map((item: any, index: number) => (
-                        <div key={index} className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                        <div key={index} className="p-3 bg-card border border-border rounded-lg shadow-sm">
                           <div className="flex justify-between">
-                            <h4 className="font-medium text-white text-sm">{item.title}</h4>
+                            <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
                             {item.url && (
                               <a
                                 href={item.url}
@@ -621,13 +621,13 @@ export default function ModernPortfolioPage({
                               </a>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">{item.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
                           <div className="flex gap-2 mt-2">
-                            <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/10 text-xs">
+                            <Badge variant="outline" className="border-border text-muted-foreground bg-secondary/30 text-xs">
                               {item.type}
                             </Badge>
                             {item.date && (
-                              <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/10 text-xs">
+                              <Badge variant="outline" className="border-border text-muted-foreground bg-secondary/30 text-xs">
                                 {item.date}
                               </Badge>
                             )}
@@ -644,21 +644,21 @@ export default function ModernPortfolioPage({
 
         {/* Right Column - Projects */}
         <div className="lg:col-span-2">
-          <Card className="border-0 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <Card className="border border-border bg-card shadow-sm overflow-hidden">
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2 text-foreground">
                   <FolderOpen className="w-5 h-5" />
                   My Projects
                 </CardTitle>
                 
                 <div className="flex gap-2 flex-wrap">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="text"
                       placeholder="Search projects..."
-                      className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -677,7 +677,7 @@ export default function ModernPortfolioPage({
                 <Button
                   variant={activeFilter === "all" ? "secondary" : "outline"}
                   size="sm"
-                  className={`${activeFilter === "all" ? "bg-primary text-primary-foreground" : "border-white/20 text-white hover:bg-white/10"} px-3`}
+                  className={`${activeFilter === "all" ? "bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-secondary"} px-3`}
                   onClick={() => setActiveFilter("all")}
                 >
                   All
@@ -685,7 +685,7 @@ export default function ModernPortfolioPage({
                 <Button
                   variant={activeFilter === "personal" ? "secondary" : "outline"}
                   size="sm"
-                  className={`${activeFilter === "personal" ? "bg-primary text-primary-foreground" : "border-white/20 text-white hover:bg-white/10"} px-3`}
+                  className={`${activeFilter === "personal" ? "bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-secondary"} px-3`}
                   onClick={() => setActiveFilter("personal")}
                 >
                   Personal
@@ -693,7 +693,7 @@ export default function ModernPortfolioPage({
                 <Button
                   variant={activeFilter === "cluster" ? "secondary" : "outline"}
                   size="sm"
-                  className={`${activeFilter === "cluster" ? "bg-primary text-primary-foreground" : "border-white/20 text-white hover:bg-white/10"} px-3`}
+                  className={`${activeFilter === "cluster" ? "bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-secondary"} px-3`}
                   onClick={() => setActiveFilter("cluster")}
                 >
                   Cluster
@@ -709,35 +709,35 @@ export default function ModernPortfolioPage({
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                     >
-                      <Card className="h-full border border-white/10 bg-white/5 backdrop-blur-md hover:bg-white/[0.07] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10 overflow-hidden">
+                      <Card className="h-full border border-border bg-card hover:shadow-md hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
                         <CardHeader className="pb-3">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="text-lg font-bold text-white mb-1">{project.name}</h3>
+                              <h3 className="text-lg font-bold text-foreground mb-1">{project.name}</h3>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className={`border-white/10 ${project.visibility === 'public' ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-400 bg-slate-400/10'}`}>
+                                <Badge variant="outline" className={`border-border ${project.visibility === 'public' ? 'text-emerald-500 bg-emerald-500/10' : 'text-muted-foreground bg-secondary'}`}>
                                   {project.visibility}
                                 </Badge>
-                                <Badge variant="outline" className="border-white/10 text-slate-400 bg-white/10">
+                                <Badge variant="outline" className="border-border text-muted-foreground bg-secondary">
                                   {project.type}
                                 </Badge>
                               </div>
                             </div>
                             
-                            <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 text-indigo-400">
+                            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
                               <Code2 className="w-5 h-5" />
                             </div>
                           </div>
                         </CardHeader>
                         
                         <CardContent className="pb-4">
-                          <p className="text-slate-400 text-sm mb-4 line-clamp-2">
+                          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
                             {project.description}
                           </p>
                           
                           <div className="flex flex-wrap gap-2 mb-4">
                             {project.project_tags?.slice(0, 3).map((tag, i) => (
-                              <span key={i} className="text-xs text-slate-500 bg-white/5 px-2 py-1 rounded-md flex items-center gap-1">
+                              <span key={i} className="text-xs text-muted-foreground bg-secondary/50 px-2 py-1 rounded-md flex items-center gap-1">
                                 <Tags className="w-3 h-3" />
                                 {tag.tag}
                               </span>
@@ -748,21 +748,21 @@ export default function ModernPortfolioPage({
                         <CardFooter className="flex justify-between pt-0">
                           <div className="flex gap-2">
                             {project.repository_url && (
-                              <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                              <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-secondary">
                                 <Github className="w-4 h-4 mr-2" />
                                 Code
                               </Button>
                             )}
                             
                             {project.demo_url && (
-                              <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                              <Button size="sm" variant="outline" className="border-border text-foreground hover:bg-secondary">
                                 <Globe className="w-4 h-4 mr-2" />
                                 Demo
                               </Button>
                             )}
                           </div>
                           
-                          <Button size="sm" variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10">
+                          <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-foreground hover:bg-secondary">
                             <ArrowUpRight className="w-4 h-4" />
                           </Button>
                         </CardFooter>
@@ -772,11 +772,11 @@ export default function ModernPortfolioPage({
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                    <FolderOpen className="w-8 h-8 text-slate-500" />
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4">
+                    <FolderOpen className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-medium text-white mb-2">No Projects Found</h3>
-                  <p className="text-slate-400 mb-6">
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Projects Found</h3>
+                  <p className="text-muted-foreground mb-6">
                     {searchTerm 
                       ? "No projects match your search. Try different keywords." 
                       : "You haven't created or joined any projects yet."}

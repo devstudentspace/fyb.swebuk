@@ -134,7 +134,7 @@ export function TopNav({ user, userRole, onMenuClick }: TopNavProps) {
   );
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/10 bg-background/[0.02] backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-border/[0.05] bg-background/[0.01] backdrop-blur-sm">
       <div className="flex h-16 items-center px-6 justify-between">
         {/* Left Side: Mobile Menu & Breadcrumbs/Nav */}
         <div className="flex items-center gap-4">

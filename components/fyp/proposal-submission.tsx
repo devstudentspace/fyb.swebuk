@@ -65,6 +65,7 @@ export function ProposalSubmission({
     setSubmitting(true);
 
     const form = e.currentTarget;
+    const formData = new FormData(form);
 
     try {
       let result;

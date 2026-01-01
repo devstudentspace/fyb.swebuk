@@ -24,9 +24,10 @@ interface ChapterProgressTrackerProps {
   progressPercentage: number;
   githubRepoUrl?: string | null;
   fypId: string;
+  readOnly?: boolean;
 }
 
-export function ChapterProgressTracker({ chapters, progressPercentage, githubRepoUrl, fypId }: ChapterProgressTrackerProps) {
+export function ChapterProgressTracker({ chapters, progressPercentage, githubRepoUrl, fypId, readOnly = false }: ChapterProgressTrackerProps) {
   const router = useRouter();
   const [isEditingGithub, setIsEditingGithub] = useState(false);
   const [githubUrl, setGithubUrl] = useState(githubRepoUrl || "");
@@ -156,9 +157,11 @@ export function ChapterProgressTracker({ chapters, progressPercentage, githubRep
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground truncate flex-1">{githubRepoUrl}</p>
               <div className="flex gap-1">
-                <Button size="sm" variant="ghost" onClick={() => setIsEditingGithub(true)}>
-                  <Edit2 className="h-3 w-3" />
-                </Button>
+                {!readOnly && (
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingGithub(true)}>
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" asChild>
                   <Link href={githubRepoUrl} target="_blank" rel="noopener noreferrer">
                     View Repo
@@ -167,15 +170,17 @@ export function ChapterProgressTracker({ chapters, progressPercentage, githubRep
               </div>
             </div>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsEditingGithub(true)}
-              className="w-full"
-            >
-              <Github className="h-3 w-3 mr-2" />
-              Add GitHub Repository
-            </Button>
+            !readOnly && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsEditingGithub(true)}
+                className="w-full"
+              >
+                <Github className="h-3 w-3 mr-2" />
+                Add GitHub Repository
+              </Button>
+            )
           )}
         </div>
 

@@ -56,7 +56,7 @@ export async function submitFYPProposal(formData: FormData) {
   // Check if student has been assigned a supervisor
   const { data: existingFyp } = await supabase
     .from("final_year_projects")
-    .select("supervisor_id")
+    .select("id, supervisor_id")
     .eq("student_id", user.id)
     .not("supervisor_id", "is", null)
     .single();

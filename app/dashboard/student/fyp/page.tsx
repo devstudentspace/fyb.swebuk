@@ -206,19 +206,27 @@ export default async function StudentFYPPage() {
       );
       const latest = submissions[0];
 
+      // If it's the proposal and project is already active, it's approved by definition
+      const isApprovedProposal = chapter.type === 'proposal' && 
+        ["in_progress", "ready_for_review", "completed"].includes(proposalStatus);
+
       return {
         type: chapter.type,
         label: chapter.label,
-        status: (!latest
-          ? 'not_started'
-          : latest.status === 'approved'
-            ? 'approved'
+        status: (isApprovedProposal || latest?.status === 'approved'
+          ? 'approved'
+          : !latest
+            ? 'not_started'
             : latest.status === 'pending'
               ? 'pending'
               : 'needs_revision') as "approved" | "pending" | "needs_revision" | "not_started",
         latestVersion: latest?.version_number,
       };
     });
+
+    const approvedTypes = chapterProgress
+      .filter(c => c.status === 'approved')
+      .map(c => c.type);
 
     return (
       <div className="space-y-6">
@@ -243,7 +251,7 @@ export default async function StudentFYPPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Submission Form */}
-            <SubmissionForm fypId={fypData.id} />
+            <SubmissionForm fypId={fypData.id} approvedTypes={approvedTypes} />
 
             {/* Submission History */}
             <SubmissionHistory submissions={fypData.submissions || []} />

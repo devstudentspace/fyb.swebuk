@@ -1,7 +1,6 @@
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/contexts/theme-context";
-import { Toaster } from "sonner";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -32,7 +31,6 @@ export default function RootLayout({
           storageKey="ui-theme"
         >
           {children}
-          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </body>
     </html>

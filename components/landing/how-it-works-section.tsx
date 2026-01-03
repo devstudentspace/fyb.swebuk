@@ -13,19 +13,19 @@ export function HowItWorksSection() {
             <h4>Sign Up</h4>
             <p>Create your account and select your academic level. Students from Level 100 to 400 are welcome.</p>
           </div>
-          
+
           <div className="glass-card step-card animate-on-scroll delay-2">
             <div className="step-number">2</div>
             <h4>Join Clusters</h4>
             <p>Browse and join tech clusters that match your interests. Each cluster has its own community and projects.</p>
           </div>
-          
+
           <div className="glass-card step-card animate-on-scroll delay-3">
             <div className="step-number">3</div>
             <h4>Collaborate</h4>
             <p>Participate in projects, attend events, and engage in discussions. Learn from peers and mentors.</p>
           </div>
-          
+
           <div className="glass-card step-card animate-on-scroll delay-4">
             <div className="step-number">4</div>
             <h4>Build Portfolio</h4>

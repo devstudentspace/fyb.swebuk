@@ -20,7 +20,7 @@ export function TestimonialsSection() {
               </div>
             </div>
           </div>
-          
+
           <div className="glass-card testimonial-card animate-on-scroll delay-2">
             <p className="testimonial-content">
               The FYP module made managing my final year project so much easier. My supervisor could track my progress and provide feedback in real-time.
@@ -33,7 +33,7 @@ export function TestimonialsSection() {
               </div>
             </div>
           </div>
-          
+
           <div className="glass-card testimonial-card animate-on-scroll delay-3">
             <p className="testimonial-content">
               Being part of the Mobile Dev cluster exposed me to React Native and Flutter. I've now built 3 apps with my cluster mates. Amazing community!

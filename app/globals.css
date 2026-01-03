@@ -464,7 +464,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
@@ -505,6 +505,7 @@ body {
   transform: translate(-50%, -50%);
   animation-delay: -20s;
 }
+
 
 @keyframes ambientFloat {
   0%, 100% {
@@ -579,6 +580,21 @@ p {
 section {
   padding: var(--space-4xl) 0;
   position: relative;
+}
+
+/* Ensure sections don't cause overflow */
+section:last-of-type {
+  padding-bottom: 0;
+}
+
+/* Hide the notifications container if it's causing layout issues */
+[aria-label="Notifications alt+T"] {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 /* -------------------- Enhanced Glassmorphism Cards -------------------- */
@@ -1423,24 +1439,6 @@ section {
   color: var(--text-tertiary);
 }
 
-/* Ensure footer stays at the bottom */
-html, body {
-  height: 100%;
-}
-
-#__next {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-main {
-  flex: 1 0 auto;
-}
-
-footer {
-  flex-shrink: 0;
-}
 
 
 /* -------------------- Animations -------------------- */
@@ -1502,6 +1500,8 @@ footer {
   background: var(--gradient-primary);
   z-index: 9999;
   transition: width 0.1s ease-out;
+  width: 0;
+  pointer-events: none;
 }
 
 /* Skeleton Loading Animation */
@@ -1723,9 +1723,9 @@ footer {
   }
 
   .nav-links .nav-link {
-    padding: var(--space-md) 0;
+    padding: var(--space-lg) 0;
     text-align: center;
-    font-size: 1rem;
+    font-size: 1.125rem;
     margin-bottom: var(--space-md);
     position: relative;
   }

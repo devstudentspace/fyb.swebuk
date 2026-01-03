@@ -13,7 +13,7 @@ export function CtaSection() {
           <p className="animate-on-scroll delay-1">Join thousands of software engineering students already building their future with Swebuk.</p>
           <div className="animate-on-scroll delay-2">
             <Link href="/auth/sign-up" className="btn btn-primary">
-              <span>Create Free Account</span>
+              <span>Join the Community</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
           </div>

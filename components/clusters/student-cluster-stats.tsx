@@ -50,21 +50,25 @@ export function StudentClusterStats({ clusterId }: StudentClusterStatsProps) {
 
   return (
     <>
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 flex flex-col items-center text-center group hover:border-white/20 transition-all duration-300 hover:scale-105">
-        <div className="p-3 rounded-xl bg-blue-500/10 mb-3 group-hover:scale-110 transition-transform duration-300">
-          <FileText className="h-6 w-6 text-blue-500" />
-        </div>
-        <p className="text-3xl font-bold text-white mb-1">{loading ? "—" : stats.projects}</p>
-        <p className="text-sm font-medium text-slate-400">Active Projects</p>
-      </div>
+      <Card className="hover:shadow-md transition-all duration-300 hover:scale-[1.02] border-border/50">
+        <CardContent className="p-4 sm:p-6 flex flex-col items-center text-center">
+          <div className="p-2.5 rounded-xl bg-blue-500/10 mb-3">
+            <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{loading ? "—" : stats.projects}</p>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">Projects</p>
+        </CardContent>
+      </Card>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 flex flex-col items-center text-center group hover:border-white/20 transition-all duration-300 hover:scale-105">
-        <div className="p-3 rounded-xl bg-emerald-500/10 mb-3 group-hover:scale-110 transition-transform duration-300">
-          <Calendar className="h-6 w-6 text-emerald-500" />
-        </div>
-        <p className="text-3xl font-bold text-white mb-1">{loading ? "—" : stats.events}</p>
-        <p className="text-sm font-medium text-slate-400">Upcoming Events</p>
-      </div>
+      <Card className="hover:shadow-md transition-all duration-300 hover:scale-[1.02] border-border/50">
+        <CardContent className="p-4 sm:p-6 flex flex-col items-center text-center">
+          <div className="p-2.5 rounded-xl bg-teal-500/10 mb-3">
+            <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-teal-500" />
+          </div>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{loading ? "—" : stats.events}</p>
+          <p className="text-xs sm:text-sm font-medium text-muted-foreground">Events</p>
+        </CardContent>
+      </Card>
     </>
   );
 }

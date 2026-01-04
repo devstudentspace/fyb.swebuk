@@ -6,11 +6,11 @@ import Image from "next/image";
 import { AuthButtonClient } from "@/components/auth-button-client";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,36 +68,46 @@ export function Navigation() {
               <AuthButtonClient />
             </div>
 
-            {/* Mobile Menu */}
+            {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center gap-4">
               <ThemeToggle />
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right">
-                  <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-                  <div className="flex flex-col gap-4 mt-8">
-                      {navLinks.map((link) => (
-                                              <Link 
-                                                key={link.href} 
-                                                href={link.href} 
-                                                className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
-                                              >                          {link.label}
-                        </Link>
-                      ))}
-                      <div className="mt-4">
-                        <AuthButtonClient />
-                      </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+                <span className="sr-only">Toggle menu</span>
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-b border-border/40 bg-background/60 backdrop-blur-3xl absolute left-0 right-0 p-6 shadow-2xl animate-in slide-in-from-top-5 duration-300 z-40">
+            <div className="flex flex-col space-y-4">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-lg font-bold text-foreground/90 hover:text-primary transition-colors px-2 py-3 rounded-xl hover:bg-primary/10"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="pt-6 mt-2 border-t border-border/40">
+                <AuthButtonClient />
+              </div>
+            </div>
+          </div>
+        )}
       </header>
     </>
   );

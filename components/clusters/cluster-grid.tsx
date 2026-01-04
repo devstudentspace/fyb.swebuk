@@ -295,8 +295,6 @@ export function ClusterGrid({ userRole, userId, searchTerm, filterStatus, showJo
           return (
             <Link href={`/dashboard/clusters/${cluster.id}`} key={cluster.id}>
               <div className="group relative overflow-hidden rounded-2xl bg-card border border-border hover:shadow-md hover:border-primary/50 transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105 flex flex-col cursor-pointer">
-                <div className={`absolute top-0 left-0 right-0 h-1 ${cluster.status === 'active' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gradient-to-r from-amber-500 to-orange-500'}`} />
-
                 <div className="p-4 sm:p-6 pb-2 sm:pb-3">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-base sm:text-lg font-bold text-foreground truncate group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors duration-200">

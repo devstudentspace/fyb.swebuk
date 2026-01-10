@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { TopNav } from "@/components/dashboard/top-nav";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Preloader } from "@/components/ui/preloader";
 
 interface DashboardWrapperProps {
   children: React.ReactNode;
@@ -15,6 +17,12 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
   const [userAcademicLevel, setUserAcademicLevel] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -82,6 +90,7 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground relative">
+      {isNavigating && <Preloader />}
       <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
       {/* Desktop Sidebar */}
       <DashboardNav
@@ -90,6 +99,7 @@ export function DashboardWrapper({ children }: DashboardWrapperProps) {
         userAcademicLevel={userAcademicLevel || undefined}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        setIsNavigating={setIsNavigating}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

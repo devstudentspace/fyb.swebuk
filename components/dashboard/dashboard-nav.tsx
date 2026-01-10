@@ -37,6 +37,7 @@ interface DashboardNavProps {
   userAcademicLevel?: string;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
+  setIsNavigating: (isNavigating: boolean) => void;
 }
 
 export function DashboardNav({ 
@@ -44,7 +45,8 @@ export function DashboardNav({
   userProfileRole, 
   userAcademicLevel, 
   isSidebarOpen, 
-  setIsSidebarOpen 
+  setIsSidebarOpen,
+  setIsNavigating
 }: DashboardNavProps) {
   const pathname = usePathname();
   const userRole = userProfileRole || "student";
@@ -63,6 +65,13 @@ export function DashboardNav({
       fetchClusters();
     }
   }, [userId, userRole]);
+
+  const handleLinkClick = () => {
+    setIsNavigating(true);
+    setTimeout(() => {
+      setIsSidebarOpen(false);
+    }, 800);
+  };
 
   const getNavSections = () => {
     // Common colors
@@ -83,7 +92,7 @@ export function DashboardNav({
     };
 
     const mainNavItems = [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard },
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard, exact: true },
       { href: `/dashboard/student/profile`, label: "My Profile", icon: Users, color: colors.profile },
       { href: "/dashboard/portfolio", label: "Portfolio", icon: Briefcase, color: colors.portfolio },
     ];
@@ -123,7 +132,7 @@ export function DashboardNav({
 
     const adminNav = {
       "Admin Panel": [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard },
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard, exact: true },
         { href: "/dashboard/admin/users", label: "Student Management", icon: Users, color: colors.users },
         { href: "/dashboard/admin/staff", label: "Staff Management", icon: UserCog, color: colors.staff },
         { href: "/dashboard/admin/academic-sessions", label: "Academic Sessions", icon: CalendarCog, color: colors.settings },
@@ -145,7 +154,7 @@ export function DashboardNav({
 
     const staffNav = {
       "Main": [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard },
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard, exact: true },
         { href: `/dashboard/${userRole}/profile`, label: "My Profile", icon: Users, color: colors.profile },
       ],
       "Management": [
@@ -164,7 +173,7 @@ export function DashboardNav({
 
     const leadNav = {
       "Main": [
-        { href: "/dashboard/lead", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard },
+        { href: "/dashboard/lead", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard, exact: true },
         { href: `/dashboard/lead/profile`, label: "My Profile", icon: Users, color: colors.profile },
       ],
       "Management": [
@@ -181,7 +190,7 @@ export function DashboardNav({
 
     const deputyNav = {
       "Main": [
-        { href: "/dashboard/deputy", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard },
+        { href: "/dashboard/deputy", label: "Dashboard", icon: LayoutDashboard, color: colors.dashboard, exact: true },
         { href: `/dashboard/deputy/profile`, label: "My Profile", icon: Users, color: colors.profile },
       ],
       "Management": [
@@ -221,7 +230,7 @@ export function DashboardNav({
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="h-16 flex items-center px-6 border-b border-border/10">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
+        <Link href="/dashboard" className="flex items-center gap-3 group" onClick={handleLinkClick}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-transparent transition-transform group-hover:scale-110">
             <Image
               src="/buk-logo.png"
@@ -280,10 +289,11 @@ export function DashboardNav({
                       )}
                     >
                       <div className="pl-4 space-y-1 mt-1 border-l ml-2.5 border-border/20">
-                        {Array.isArray(items) && items.map((item) => (
+                        {Array.isArray(items) && items.map((item: any) => (
                           <Link
                             key={item.href}
                             href={item.href}
+                            onClick={handleLinkClick}
                             className={cn(
                               "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors relative group",
                               "text-muted-foreground hover:text-foreground hover:bg-muted/10"
@@ -298,14 +308,17 @@ export function DashboardNav({
                   </div>
                 ) : (
                   // Regular Items
-                  Array.isArray(items) && items.length > 0 && items.map((item) => {
+                  Array.isArray(items) && items.length > 0 && items.map((item: any) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive = item.exact 
+                      ? pathname === item.href 
+                      : pathname === item.href || pathname.startsWith(item.href + "/");
                     
                     return (
                       <Link
                         key={item.href}
                         href={item.href}
+                        onClick={handleLinkClick}
                         className={cn(
                           "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 group relative",
                           isActive

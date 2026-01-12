@@ -2,13 +2,33 @@
 
 import { useTheme } from "@/contexts/theme-context";
 import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent rendering until mounted on client to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+
+  // Render a placeholder with same dimensions during SSR
+  if (!mounted) {
+    return (
+      <button
+        className="relative inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 transition-all duration-500"
+        aria-label="Toggle theme"
+        disabled
+      >
+        <div className="w-5 h-5" />
+      </button>
+    );
+  }
 
   return (
     <button

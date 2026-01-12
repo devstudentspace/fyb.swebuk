@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect } from "react";
+import { Suspense } from "react";
 import { Navigation } from "@/components/landing/navigation";
 import { HeroSection } from "@/components/landing/hero-section";
 import { FeaturesSection } from "@/components/landing/features-section";
@@ -8,246 +6,15 @@ import { HowItWorksSection } from "@/components/landing/how-it-works-section";
 import { TestimonialsSection } from "@/components/landing/testimonials-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
+import { getFeaturedBlogs, getLatestBlogs, getUpcomingEvents, getPopularClusters } from "@/lib/supabase/landing-actions";
+import { LandingBlogCard } from "@/components/landing/landing-blog-card";
+import { LandingEventCard } from "@/components/landing/landing-event-card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { PageAnimations } from "@/components/landing/page-animations";
 
-export default function Home() {
-  useEffect(() => {
-    // Scroll Animations (from script.js)
-    const initScrollAnimations = () => {
-      const animatedElements = document.querySelectorAll('.animate-on-scroll');
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      }, {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-      });
-
-      animatedElements.forEach(el => observer.observe(el));
-
-      // Immediately show elements visible on page load
-      setTimeout(() => {
-        animatedElements.forEach(el => {
-          const rect = el.getBoundingClientRect();
-          if (rect.top < window.innerHeight && rect.bottom > 0) {
-            el.classList.add('visible');
-          }
-        });
-      }, 100);
-    };
-
-    // Parallax Effects (from script.js)
-    const initParallaxEffects = () => {
-      const parallaxElements = document.querySelectorAll('.hero-orb') as NodeListOf<HTMLElement>;
-      if (!parallaxElements.length) return;
-
-      let ticking = false;
-
-      const updateParallax = () => {
-        const scrollY = window.pageYOffset;
-        parallaxElements.forEach((orb, index) => {
-          const speed = 0.05 + (index * 0.02);
-          const yPos = scrollY * speed;
-          orb.style.transform = `translate3d(0, ${yPos}px, 0)`;
-        });
-        ticking = false;
-      };
-
-      const onScroll = () => {
-        if (!ticking) {
-          requestAnimationFrame(updateParallax);
-          ticking = true;
-        }
-      };
-
-      window.addEventListener('scroll', onScroll, { passive: true });
-      return () => window.removeEventListener('scroll', onScroll);
-    };
-
-    // Initialize animations
-    initScrollAnimations();
-    const cleanupParallax = initParallaxEffects();
-
-    // Depth-based Hover Effects (from script.js)
-    const initDepthHoverEffects = () => {
-      const cards = document.querySelectorAll('.glass-card, .feature-card') as NodeListOf<HTMLElement>;
-
-      const handleCardHover = (event: MouseEvent) => {
-        const card = event.currentTarget as HTMLElement;
-        const rect = card.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-
-        const rotateX = (y - centerY) / 20;
-        const rotateY = (centerX - x) / 20;
-
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-        card.style.transition = 'transform 0.1s ease-out';
-      };
-
-      const handleCardLeave = (event: MouseEvent) => {
-        const card = event.currentTarget as HTMLElement;
-        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-        card.style.transition = 'transform 0.3s ease-out';
-      };
-
-      cards.forEach(card => {
-        card.addEventListener('mousemove', handleCardHover as any);
-        card.addEventListener('mouseleave', handleCardLeave as any);
-      });
-
-      return () => {
-        cards.forEach(card => {
-          card.removeEventListener('mousemove', handleCardHover as any);
-          card.removeEventListener('mouseleave', handleCardLeave as any);
-        });
-      };
-    };
-
-    const cleanupHover = initDepthHoverEffects();
-
-    // Animated Stat Counters (from script.js)
-    const initStatCounters = () => {
-      const statNumbers = document.querySelectorAll('.stat-number');
-      if (!statNumbers.length) return;
-
-      const observerOptions = {
-        threshold: 0.5,
-        rootMargin: '0px'
-      };
-
-      const animateCounter = (element: Element, targetValue: number, hasPlus: boolean) => {
-        const duration = 1500;
-        const frameDuration = 16;
-        const totalFrames = Math.round(duration / frameDuration);
-        let frame = 0;
-
-        const easeOutQuart = (t: number) => 1 - Math.pow(1 - t, 4);
-
-        const counter = setInterval(() => {
-          frame++;
-          const progress = Math.min(frame / totalFrames, 1);
-          const easedProgress = easeOutQuart(progress);
-          const currentValue = Math.round(targetValue * easedProgress);
-
-          element.textContent = currentValue + (hasPlus ? '+' : '');
-
-          if (frame === totalFrames) {
-            clearInterval(counter);
-            element.textContent = targetValue + (hasPlus ? '+' : '');
-          }
-        }, frameDuration);
-      };
-
-      const counterObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const counter = entry.target;
-            const targetText = counter.textContent || '';
-            const hasPlus = targetText.includes('+');
-            const targetValue = parseInt(targetText.replace(/\D/g, ''));
-
-            animateCounter(counter, targetValue, hasPlus);
-            counterObserver.unobserve(counter);
-          }
-        });
-      }, observerOptions);
-
-      statNumbers.forEach(stat => counterObserver.observe(stat));
-    };
-
-    initStatCounters();
-
-    // Ripple Effects (from script.js)
-    const initRippleEffects = () => {
-      const buttons = document.querySelectorAll('.btn');
-      buttons.forEach(button => {
-        button.addEventListener('click', createRipple);
-      });
-    };
-
-    const createRipple = (event: MouseEvent) => {
-      const button = event.currentTarget as HTMLElement;
-
-      // Check if button already has ripple disabled
-      if (button.classList.contains('no-ripple')) return;
-
-      const ripple = document.createElement('span');
-      ripple.classList.add('ripple-effect');
-
-      const rect = button.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height);
-      const x = event.clientX - rect.left - size / 2;
-      const y = event.clientY - rect.top - size / 2;
-
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
-
-      button.appendChild(ripple);
-
-      // Remove ripple after animation
-      setTimeout(() => {
-        ripple.remove();
-      }, 600);
-    };
-
-    initRippleEffects();
-
-    // Scroll Progress Indicator (from script.js)
-    const initScrollProgress = () => {
-      // Create progress bar element
-      const progressBar = document.createElement('div');
-      progressBar.className = 'scroll-progress-bar';
-      document.body.appendChild(progressBar);
-
-      const updateProgress = () => {
-        const scrollTop = window.pageYOffset;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-
-        progressBar.style.width = scrollPercent + '%';
-      };
-
-      // Use requestAnimationFrame for smooth updates
-      let ticking = false;
-
-      window.addEventListener('scroll', () => {
-        updateProgress();
-
-        if (!ticking) {
-          requestAnimationFrame(() => {
-            updateProgress();
-            ticking = false;
-          });
-          ticking = true;
-        }
-      }, { passive: true });
-
-      // Initial update
-      updateProgress();
-
-      // Return cleanup function
-      return () => {
-        progressBar.remove();
-      };
-    };
-
-    const cleanupScrollProgress = initScrollProgress();
-
-    return () => {
-      if (cleanupParallax) cleanupParallax();
-      if (cleanupHover) cleanupHover();
-      if (cleanupScrollProgress) cleanupScrollProgress();
-    };
-  }, []);
-
+function LandingPageClient({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="ambient-bg">
@@ -256,6 +23,229 @@ export default function Home() {
         <div className="ambient-orb ambient-orb-3"></div>
       </div>
 
+      {children}
+      <PageAnimations />
+    </div>
+  );
+}
+
+// Loading skeletons
+function BlogSkeleton() {
+  return (
+    <div className="glass-card feature-card animate-on-scroll">
+      <div className="feature-icon">
+        <div className="w-8 h-8 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="h-5 w-3/4 bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-full bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-2/3 bg-white/10 rounded animate-pulse" />
+    </div>
+  );
+}
+
+function EventSkeleton() {
+  return (
+    <div className="glass-card feature-card animate-on-scroll">
+      <div className="feature-icon">
+        <div className="w-8 h-8 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="h-5 w-3/4 bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-full bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-2/3 bg-white/10 rounded animate-pulse" />
+    </div>
+  );
+}
+
+function ClusterSkeleton() {
+  return (
+    <div className="glass-card feature-card animate-on-scroll">
+      <div className="feature-icon">
+        <div className="w-8 h-8 bg-white/10 rounded animate-pulse" />
+      </div>
+      <div className="h-5 w-3/4 bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-full bg-white/10 rounded animate-pulse mb-2" />
+      <div className="h-4 w-2/3 bg-white/10 rounded animate-pulse" />
+    </div>
+  );
+}
+
+// Featured Blogs Section
+async function FeaturedBlogsSection() {
+  const blogs = await getFeaturedBlogs(3);
+
+  if (!blogs || blogs.length === 0) return null;
+
+  return (
+    <section className="py-16 bg-white/5 backdrop-blur-sm border-y border-white/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+              <BookOpen className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Featured Articles</h2>
+              <p className="text-sm text-slate-400">Hand-picked content from our community</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+            asChild
+          >
+            <Link href="/blog">View All</Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {blogs.map((blog) => (
+            <LandingBlogCard key={blog.id} blog={blog} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Latest Blogs Section
+async function LatestBlogsSection() {
+  const blogs = await getLatestBlogs(4);
+
+  if (!blogs || blogs.length === 0) return null;
+
+  return (
+    <section className="py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+              <BookOpen className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Latest Articles</h2>
+              <p className="text-sm text-slate-400">Fresh content from our writers</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+            asChild
+          >
+            <Link href="/blog">See More</Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {blogs.map((blog) => (
+            <LandingBlogCard key={blog.id} blog={blog} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Upcoming Events Section
+async function UpcomingEventsSection() {
+  const events = await getUpcomingEvents(3);
+
+  if (!events || events.length === 0) return null;
+
+  return (
+    <section className="py-16 bg-white/5 backdrop-blur-sm border-y border-white/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30">
+              <Calendar className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Upcoming Events</h2>
+              <p className="text-sm text-slate-400">Join our community events</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+            asChild
+          >
+            <Link href="/events">View All</Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {events.map((event) => (
+            <LandingEventCard key={event.id} event={event} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Popular Clusters Section
+async function PopularClustersSection() {
+  const clusters = await getPopularClusters(4);
+
+  if (!clusters || clusters.length === 0) return null;
+
+  return (
+    <section className="py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+              <Users className="w-5 h-5 text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Popular Clusters</h2>
+              <p className="text-sm text-slate-400">Join our active communities</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+            asChild
+          >
+            <Link href="/dashboard/clusters">Explore</Link>
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {clusters.map((cluster) => (
+            <Link key={cluster.id} href={`/dashboard/clusters/${cluster.id}`} className="group block h-full">
+              <div className="glass-card animate-on-scroll h-full flex flex-col overflow-hidden">
+                <div className="p-6 flex-grow flex flex-col">
+                  <div className="feature-icon mb-4">
+                    <Users className="w-8 h-8 text-white" />
+                  </div>
+                  <h4 className="font-bold text-lg text-white group-hover:text-gradient transition-colors duration-300 flex-grow">
+                    {cluster.name}
+                  </h4>
+                  <p className="text-slate-300 text-sm mt-2 flex-grow">{cluster.description || "No description available."}</p>
+                </div>
+                <div className="px-6 py-3 bg-white/5 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4" />
+                    {cluster.members_count} members
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default async function Home() {
+  return (
+    <LandingPageClient>
       <Navigation />
 
       <main className="flex-grow">
@@ -263,10 +253,116 @@ export default function Home() {
         <FeaturesSection />
         <HowItWorksSection />
         <TestimonialsSection />
+
+        {/* Dynamic content sections */}
+        <Suspense fallback={
+          <section className="py-16 bg-white/5 backdrop-blur-sm border-y border-white/10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+                    <BookOpen className="w-5 h-5 text-emerald-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Featured Articles</h2>
+                    <p className="text-sm text-slate-400">Hand-picked content from our community</p>
+                  </div>
+                </div>
+                <div className="border border-white/20 text-white bg-transparent py-2 px-4 rounded-md text-sm animate-pulse">
+                  Loading...
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => <BlogSkeleton key={i} />)}
+              </div>
+            </div>
+          </section>
+        }>
+          <FeaturedBlogsSection />
+        </Suspense>
+
+        <Suspense fallback={
+          <section className="py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+                    <BookOpen className="w-5 h-5 text-emerald-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Latest Articles</h2>
+                    <p className="text-sm text-slate-400">Fresh content from our writers</p>
+                  </div>
+                </div>
+                <div className="border border-white/20 text-white bg-transparent py-2 px-4 rounded-md text-sm animate-pulse">
+                  Loading...
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <BlogSkeleton key={i} />)}
+              </div>
+            </div>
+          </section>
+        }>
+          <LatestBlogsSection />
+        </Suspense>
+
+        <Suspense fallback={
+          <section className="py-16 bg-white/5 backdrop-blur-sm border-y border-white/10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30">
+                    <Calendar className="w-5 h-5 text-blue-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Upcoming Events</h2>
+                    <p className="text-sm text-slate-400">Join our community events</p>
+                  </div>
+                </div>
+                <div className="border border-white/20 text-white bg-transparent py-2 px-4 rounded-md text-sm animate-pulse">
+                  Loading...
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => <EventSkeleton key={i} />)}
+              </div>
+            </div>
+          </section>
+        }>
+          <UpcomingEventsSection />
+        </Suspense>
+
+        <Suspense fallback={
+          <section className="py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between mb-12">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+                    <Users className="w-5 h-5 text-violet-400 animate-pulse" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Popular Clusters</h2>
+                    <p className="text-sm text-slate-400">Join our active communities</p>
+                  </div>
+                </div>
+                <div className="border border-white/20 text-white bg-transparent py-2 px-4 rounded-md text-sm animate-pulse">
+                  Loading...
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map(i => <ClusterSkeleton key={i} />)}
+              </div>
+            </div>
+          </section>
+        }>
+          <PopularClustersSection />
+        </Suspense>
+
         <CtaSection />
       </main>
 
       <Footer />
-    </div>
+    </LandingPageClient>
   );
 }

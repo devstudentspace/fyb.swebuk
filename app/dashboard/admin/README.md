@@ -80,8 +80,11 @@ graph LR
 ## Activity Diagram
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#FF6347', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f4f4f4'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#d3d3d3', 'lineColor': '#d3d3d3'}}}%%
 flowchart TD
+    classDef default fill:#ffffff,stroke:#d3d3d3,stroke-width:4px,color:#000;
+    linkStyle default stroke:#d3d3d3,stroke-width:4px;
+
     Start((Start)) --> Login[Log In]
     Login --> Dash{View Dashboard}
     
@@ -108,6 +111,6 @@ flowchart TD
     Rejected --> End
     ManageContent --> End
     
-    style Start fill:#800080,stroke:#333,stroke-width:2px,color:white
-    style End fill:#800080,stroke:#333,stroke-width:2px,color:white
+    style Start fill:#ffffff,stroke:#d3d3d3,stroke-width:4px
+    style End fill:#ffffff,stroke:#d3d3d3,stroke-width:4px
 ```

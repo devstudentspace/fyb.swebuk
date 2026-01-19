@@ -66,3 +66,39 @@ graph LR
 | **UC20** | Manage Clusters | Staff member manages assigned clusters (members, activities). | User has staff role and assigned clusters. | Cluster management tasks are performed. |
 | **UC21** | Manage Events | Staff member creates and manages events (registrations, attendance). | User has staff role. | Event is created and managed. |
 | **UC22** | Supervise FYP | Supervisor reviews and provides feedback on FYP submissions. | User is a supervisor with assigned students. | FYP supervision is performed and recorded. |
+
+## Activity Diagram
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff'}}}%%
+flowchart TD
+    Start((Start)) --> Login[Log In]
+    Login --> Dash{View Dashboard}
+    
+    Dash -->|Supervision| FYP[FYP Supervision]
+    Dash -->|Mgmt| ClusterMgmt[Manage Clusters]
+    Dash -->|Events| EventMgmt[Create / Manage Events]
+    Dash -->|Approvals| Approvals[Approve Projects / Blogs]
+    
+    FYP --> ReviewSub[Review Submission]
+    ReviewSub --> Feedback[Provide Feedback/Grade]
+    
+    ClusterMgmt --> AssignLead[Assign Leads]
+    ClusterMgmt --> Monitor[Monitor Activity]
+    
+    EventMgmt --> CreateEvt[New Event]
+    EventMgmt --> TrackAtt[Track Attendance]
+    
+    Approvals --> Dec{Decision}
+    Dec -->|Approve/Reject| Finalize[Update Status]
+    
+    Feedback --> End((End))
+    AssignLead --> End
+    Monitor --> End
+    CreateEvt --> End
+    TrackAtt --> End
+    Finalize --> End
+    
+    style Start fill:#fff,stroke:#000,stroke-width:2px
+    style End fill:#fff,stroke:#000,stroke-width:2px
+```

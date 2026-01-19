@@ -76,3 +76,38 @@ graph LR
 | **UC26** | Override Decisions | Administrator overrides system decisions or staff actions. | User has administrator role. | Decision is overridden. |
 | **UC27** | Promote Students | Administrator promotes students to leadership roles (Lead, Deputy). | User has administrator role. | Student is promoted to leadership role. |
 | **UC28** | Assign Staff Roles | Administrator assigns roles/permissions to staff members. | User has administrator role. | Staff member has updated roles. |
+
+## Activity Diagram
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff'}}}%%
+flowchart TD
+    Start((Start)) --> Login[Log In]
+    Login --> Dash{View Dashboard}
+    
+    Dash -->|User Mgmt| ManageUsers[Manage Users / Roles]
+    Dash -->|System| SysSettings[System Settings / Sessions]
+    Dash -->|Content| ManageContent[Manage Clusters / Events]
+    Dash -->|Approvals| Approvals[Approve Projects / Blogs]
+    
+    ManageUsers --> Promote[Promote Students]
+    ManageUsers --> AssignStaff[Assign Staff Roles]
+    
+    SysSettings --> Sessions[New Academic Session]
+    SysSettings --> Override[Override Decisions]
+    
+    Approvals --> Review{Review Request}
+    Review -->|Approve| Approved[Approved]
+    Review -->|Reject| Rejected[Rejected]
+    
+    Promote --> End((End))
+    AssignStaff --> End
+    Sessions --> End
+    Override --> End
+    Approved --> End
+    Rejected --> End
+    ManageContent --> End
+    
+    style Start fill:#fff,stroke:#000,stroke-width:2px
+    style End fill:#fff,stroke:#000,stroke-width:2px
+```

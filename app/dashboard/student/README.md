@@ -84,3 +84,34 @@ graph LR
 | **UC14** | Update Profile | User updates their profile information. | User is authenticated. | User profile is updated. |
 | **UC15** | Upload Profile Picture | User uploads or changes their profile picture. | User is authenticated. | User's profile picture is updated. |
 | **UC16** | Access FYP Module | Final year (Level 400) student accesses the FYP module for thesis management. | User is authenticated and is Level 400. | User has access to FYP features (proposals, reports). |
+
+## Activity Diagram
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff'}}}%%
+flowchart TD
+    Start((Start)) --> Login[Log In]
+    Login --> Profile{Profile Complete?}
+    
+    Profile -->|No| Setup[Complete Academic Profile]
+    Setup --> Dashboard
+    Profile -->|Yes| Dashboard{View Dashboard}
+    
+    Dashboard -->|Clusters| ClusterAct[Join/View Clusters]
+    Dashboard -->|Projects| ProjectAct[Create/Join Projects]
+    Dashboard -->|Events| EventAct[Register/View Events]
+    
+    Dashboard -->|Level 400 Only| FYP{Level 400?}
+    FYP -->|Yes| AccessFYP[Access FYP Module]
+    AccessFYP --> FYPAction[Submit Proposal / Upload Report]
+    FYP -->|No| ViewRestricted[View Restricted Access Msg]
+    
+    ClusterAct --> End((End))
+    ProjectAct --> End
+    EventAct --> End
+    FYPAction --> End
+    ViewRestricted --> End
+    
+    style Start fill:#fff,stroke:#000,stroke-width:2px
+    style End fill:#fff,stroke:#000,stroke-width:2px
+```

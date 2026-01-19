@@ -72,3 +72,37 @@ graph LR
 | **UC14** | Update Profile | User updates profile. | User is authenticated. | Profile is updated. |
 | **UC15** | Upload Profile Picture | User uploads profile picture. | User is authenticated. | Picture is updated. |
 | **UC16** | Access FYP Module | Level 400 Leads access FYP module. | User is Level 400. | Access to FYP features. |
+
+## Activity Diagram
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff'}}}%%
+flowchart TD
+    Start((Start)) --> Login[Log In]
+    Login --> Dash{View Dashboard}
+    
+    Dash -->|Cluster Mgmt| CheckReq{Pending Requests?}
+    Dash -->|Projects| ManageProj[Create / Manage Cluster Projects]
+    Dash -->|Student Acts| StudentActs[Join Events / Personal Projects]
+    
+    CheckReq -->|Members| ReviewMem[Review Membership]
+    CheckReq -->|Projects| ReviewProj[Review Project Join]
+    CheckReq -->|Blogs| ReviewBlog[Review Blogs]
+    
+    ReviewMem --> DecMem{Decision}
+    ReviewProj --> DecProj{Decision}
+    ReviewBlog --> DecBlog{Decision}
+    
+    DecMem -->|Approve/Reject| DoneMem[Update Member Status]
+    DecProj -->|Approve/Reject| DoneProj[Update Project Status]
+    DecBlog -->|Approve/Reject| DoneBlog[Update Blog Status]
+    
+    DoneMem --> End((End))
+    DoneProj --> End
+    DoneBlog --> End
+    StudentActs --> End
+    ManageProj --> End
+    
+    style Start fill:#fff,stroke:#000,stroke-width:2px
+    style End fill:#fff,stroke:#000,stroke-width:2px
+```

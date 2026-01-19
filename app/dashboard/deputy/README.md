@@ -70,3 +70,37 @@ graph LR
 | **UC14** | Update Profile | User updates profile. | User is authenticated. | Profile is updated. |
 | **UC15** | Upload Profile Picture | User uploads profile picture. | User is authenticated. | Picture is updated. |
 | **UC16** | Access FYP Module | Level 400 Deputies access FYP module. | User is Level 400. | Access to FYP features. |
+
+## Activity Diagram
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'mainBkg': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#000000', 'primaryBorderColor': '#000000', 'lineColor': '#000000', 'tertiaryColor': '#ffffff', 'edgeLabelBackground':'#ffffff'}}}%%
+flowchart TD
+    Start((Start)) --> Login[Log In]
+    Login --> Dash{View Dashboard}
+    
+    Dash -->|Mgmt Duties| CheckReq{Pending Requests?}
+    Dash -->|Student Acts| StudentActs[Join Clusters / Projects / Events]
+    
+    CheckReq -->|Yes: Members| ReviewMem[Review Membership Requests]
+    CheckReq -->|Yes: Blogs| ReviewBlog[Review Blog Posts]
+    CheckReq -->|No| Idle[Monitor Cluster Activity]
+    
+    ReviewMem --> DecisionMem{Approve?}
+    DecisionMem -->|Yes| AppMem[Approve Member]
+    DecisionMem -->|No| RejMem[Reject Member]
+    
+    ReviewBlog --> DecisionBlog{Approve?}
+    DecisionBlog -->|Yes| AppBlog[Approve Blog]
+    DecisionBlog -->|No| RejBlog[Reject Blog]
+    
+    StudentActs --> End((End))
+    AppMem --> End
+    RejMem --> End
+    AppBlog --> End
+    RejBlog --> End
+    Idle --> End
+    
+    style Start fill:#fff,stroke:#000,stroke-width:2px
+    style End fill:#fff,stroke:#000,stroke-width:2px
+```

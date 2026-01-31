@@ -619,7 +619,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
             Files
           </TabsTrigger>
-          {project.members_count > 1 && (
+          {((isMember && userMembershipStatus === "approved") || isClusterMember || canManage) && (
             <TabsTrigger value="chat" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2">
               <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
               Chat
@@ -657,7 +657,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             currentUserId={user?.id || ""}
           />
         </TabsContent>
-        {project.members_count > 1 && (
+        {((isMember && userMembershipStatus === "approved") || isClusterMember || canManage) && (
           <TabsContent value="chat" className="mt-4">
             <ProjectChat
               projectId={project.id}

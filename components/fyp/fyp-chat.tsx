@@ -43,6 +43,7 @@ export function FYPChat({
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const [otherUserRecording, setOtherUserRecording] = useState(false);
   const [otherUserOnline, setOtherUserOnline] = useState(false);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherUserLastSeen, setOtherUserLastSeen] = useState<string | null>(null);
@@ -57,6 +58,7 @@ export function FYPChat({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<any>(null);
 
   const supabase = createClient();
@@ -212,6 +214,22 @@ export function FYPChat({
           }, 3000);
         }
       })
+      .on("broadcast", { event: "recording" }, (payload) => {
+        if (payload.payload.user_id !== currentUserId) {
+          setOtherUserRecording(true);
+          if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+          // Auto-clear after 60s max just in case
+          recordingTimeoutRef.current = setTimeout(() => {
+            setOtherUserRecording(false);
+          }, 60000);
+        }
+      })
+      .on("broadcast", { event: "stopped_recording" }, (payload) => {
+        if (payload.payload.user_id !== currentUserId) {
+          setOtherUserRecording(false);
+          if (recordingTimeoutRef.current) clearTimeout(recordingTimeoutRef.current);
+        }
+      })
       .on("presence", { event: "sync" }, () => {
         const newState = channel.presenceState();
         const users = Object.values(newState).flat() as any[];
@@ -282,6 +300,15 @@ export function FYPChat({
     channelRef.current.send({
       type: "broadcast",
       event: "typing",
+      payload: { user_id: currentUserId },
+    });
+  };
+
+  const handleRecordingStatus = (isRec: boolean) => {
+    if (!channelRef.current) return;
+    channelRef.current.send({
+      type: "broadcast",
+      event: isRec ? "recording" : "stopped_recording",
       payload: { user_id: currentUserId },
     });
   };
@@ -362,10 +389,14 @@ export function FYPChat({
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         sendVoiceNote(audioBlob);
         stream.getTracks().forEach(track => track.stop());
+        handleRecordingStatus(false);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+      handleRecordingStatus(true);
+      
+      // Start timer
       setRecordingDuration(0);
       recordingTimerRef.current = setInterval(() => {
         setRecordingDuration(prev => prev + 1);
@@ -392,6 +423,7 @@ export function FYPChat({
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       
       setIsRecording(false);
+      handleRecordingStatus(false);
       stopRecordingTimer();
       setRecordingDuration(0);
       audioChunksRef.current = [];
@@ -548,7 +580,12 @@ export function FYPChat({
             </div>
             {!otherUserOnline && otherUserLastSeen && (
               <span className="text-[10px] text-muted-foreground">
-                Last seen {formatDistanceToNow(new Date(otherUserLastSeen), { addSuffix: true })}
+                Last seen {formatDistanceToNow(new Date(otherUserLastSeen), { addSuffix: true, includeSeconds: true })}
+              </span>
+            )}
+            {otherUserRecording && (
+              <span className="text-[10px] text-red-500 font-medium animate-pulse">
+                Recording audio...
               </span>
             )}
           </div>
@@ -656,7 +693,7 @@ export function FYPChat({
           </div>
         </ScrollArea>
         
-        {otherUserTyping && (
+        {otherUserTyping && !otherUserRecording && (
           <div className="absolute bottom-2 left-4 text-xs text-muted-foreground italic bg-background/80 px-2 py-1 rounded animate-pulse">
             Typing...
           </div>

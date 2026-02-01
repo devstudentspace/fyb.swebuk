@@ -32,12 +32,14 @@ import {
   LogOut,
   UserPlus,
   TrendingUp,
+  MessageSquare,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClusterMembersList } from "./cluster-members-list";
 import { ClusterProjectsList } from "./cluster-projects-list";
 import { ClusterEventsList } from "./cluster-events-list";
 import { ClusterRequestsList } from "./cluster-requests-list";
+import { UnifiedChat } from "@/components/chat/unified-chat";
 
 interface DetailedCluster {
   id: string;
@@ -373,40 +375,40 @@ export function StaffClusterView({
       <Card className="border-border/50 bg-card overflow-hidden shadow-sm">
         <CardHeader className="pb-4 px-4 sm:px-6">
           <CardTitle className="text-lg sm:text-xl">Cluster Activities</CardTitle>
+          <CardDescription className="text-sm">Manage all cluster content and memberships</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Tabs defaultValue="members" className="w-full">
-            <div className="px-4 sm:px-6 border-b border-border/50">
-              <TabsList className="w-full justify-start overflow-x-auto no-scrollbar bg-transparent p-0 h-auto gap-6 sm:gap-8 rounded-none">
-                <TabsTrigger 
-                  value="members" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 pb-3 h-auto gap-2 font-semibold transition-all text-sm sm:text-base whitespace-nowrap"
-                >
-                  <Users className="h-4 w-4" />
-                  Members
-                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] bg-muted/50">{cluster.members_count}</Badge>
+            <div className="px-4 sm:px-6 pb-4">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 h-auto gap-1 p-1 bg-muted/50 rounded-lg">
+                <TabsTrigger value="members" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all">
+                  <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Members</span>
+                  <span className="sm:hidden">Memb</span>
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] bg-muted/50 hidden sm:flex">{cluster.members_count}</Badge>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="projects" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 pb-3 h-auto gap-2 font-semibold transition-all text-sm sm:text-base whitespace-nowrap"
-                >
-                  <FileText className="h-4 w-4" />
-                  Projects
+                <TabsTrigger value="projects" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Projects</span>
+                  <span className="sm:hidden">Proj</span>
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="events" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 pb-3 h-auto gap-2 font-semibold transition-all text-sm sm:text-base whitespace-nowrap"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Events
+                <TabsTrigger value="events" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Events</span>
+                  <span className="sm:hidden">Evts</span>
                 </TabsTrigger>
                 {(isMember || isManager) && (
-                  <TabsTrigger 
-                    value="requests" 
-                    className="data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 pb-3 h-auto gap-2 font-semibold transition-all text-sm sm:text-base whitespace-nowrap relative"
-                  >
-                    <AlertCircle className="h-4 w-4" />
-                    Requests
+                  <TabsTrigger value="chat" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all">
+                    <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Chat</span>
+                    <span className="sm:hidden">Chat</span>
+                  </TabsTrigger>
+                )}
+                {(isMember || isManager) && (
+                  <TabsTrigger value="requests" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-md transition-all">
+                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Requests</span>
+                    <span className="sm:hidden">Req</span>
                     {stats.pendingRequests > 0 && (
                       <Badge variant="destructive" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] rounded-full">
                         {stats.pendingRequests}
@@ -416,7 +418,7 @@ export function StaffClusterView({
                 )}
               </TabsList>
             </div>
-            <div className="p-4 sm:p-6">
+            <div className="p-4 sm:p-6 pt-0">
               <TabsContent value="members" className="mt-0">
                 <ClusterMembersList clusterId={cluster.id} userRole={user.role} canManage={canManage} />
               </TabsContent>
@@ -432,6 +434,19 @@ export function StaffClusterView({
                   canManage={canManage}
                 />
               </TabsContent>
+              {(isMember || isManager) && (
+                <TabsContent value="chat" className="mt-0">
+                  <UnifiedChat
+                    id={cluster.id}
+                    table="cluster_chat"
+                    idColumn="cluster_id"
+                    title="Cluster Chat"
+                    currentUserId={user.id}
+                    currentUserName={user.full_name || "Unknown"}
+                    currentUserAvatar={user.avatar_url || null} // Assuming user object has avatar_url or undefined
+                  />
+                </TabsContent>
+              )}
               {(isMember || isManager) && (
                 <TabsContent value="requests" className="mt-0">
                   <ClusterRequestsList

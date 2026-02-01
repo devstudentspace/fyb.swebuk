@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FYPChat } from "./fyp-chat";
+import { UnifiedChat } from "@/components/chat/unified-chat";
 
 interface FYPChatButtonProps {
   fypId: string;
@@ -37,23 +37,17 @@ export function FYPChatButton({
           Project Chatroom
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-4 border-b">
-          <DialogTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Chat with {supervisorName}
-            </span>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="h-[500px]">
-          <FYPChat
-            fypId={fypId}
-            currentUserId={currentUserId}
-            currentUserName={currentUserName}
-            currentUserAvatar={currentUserAvatar}
-          />
-        </div>
+      <DialogContent className="w-[92vw] h-auto max-h-[85vh] sm:max-w-[500px] p-0 gap-0 overflow-hidden border-none bg-transparent shadow-none">
+        <DialogTitle className="sr-only">Project Chat</DialogTitle>
+        <UnifiedChat
+          id={fypId}
+          table="fyp_chat"
+          idColumn="fyp_id"
+          title={`Chat with ${supervisorName}`}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          currentUserAvatar={currentUserAvatar}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -218,12 +218,23 @@ export function UnifiedChat({
         async (payload) => {
           if (payload.eventType === "INSERT") {
             if (payload.new.user_id === currentUserId) return;
-            // Fetch and format... (Simplified for brevity, similar to before)
+            // Fetch and format...
             const { data } = await supabase.from(table).select("*, sender:user_id(full_name, avatar_url)").eq("id", payload.new.id).single();
             if(data) {
                 const formatted = { ...data, read_by: data.read_by || [], sender_name: data.sender?.full_name, sender_avatar: data.sender?.avatar_url };
                 setMessages(prev => [...prev, formatted]);
+                
+                // Mark as read immediately if it's a new message for us
+                markSingleMessageAsRead(data.id, data.read_by || []);
             }
+          } else if (payload.eventType === "UPDATE") {
+             setMessages((prev) => 
+              prev.map((msg) => 
+                msg.id === payload.new.id 
+                  ? { ...msg, ...payload.new, read_by: payload.new.read_by || [] } 
+                  : msg
+              )
+            );
           }
         }
       )
@@ -237,7 +248,6 @@ export function UnifiedChat({
           filter: `context_id=eq.${id}`,
         },
         async (payload) => {
-          console.log("Realtime call_logs event:", payload);
           if (payload.eventType === "INSERT") {
             // New call started
             if (payload.new.status === "waiting" && payload.new.initiator_id !== currentUserId) {
@@ -261,8 +271,46 @@ export function UnifiedChat({
           }
         }
       )
-      // Broadcasts (Typing/Recording) - preserved
-      .on("broadcast", { event: "typing" }, (payload) => { /* ... existing logic ... */ })
+      // Broadcasts
+      .on("broadcast", { event: "typing" }, (payload) => {
+        const userId = payload.payload.user_id;
+        if (userId !== currentUserId) {
+          setTypingUsers(prev => new Set(prev).add(userId));
+          if (typingTimeoutRef.current[userId]) clearTimeout(typingTimeoutRef.current[userId]);
+          typingTimeoutRef.current[userId] = setTimeout(() => {
+            setTypingUsers(prev => {
+              const next = new Set(prev);
+              next.delete(userId);
+              return next;
+            });
+          }, 3000);
+        }
+      })
+      .on("broadcast", { event: "recording" }, (payload) => {
+        const userId = payload.payload.user_id;
+        if (userId !== currentUserId) {
+          setRecordingUsers(prev => new Set(prev).add(userId));
+          if (recordingTimeoutRef.current[userId]) clearTimeout(recordingTimeoutRef.current[userId]);
+          recordingTimeoutRef.current[userId] = setTimeout(() => {
+            setRecordingUsers(prev => {
+              const next = new Set(prev);
+              next.delete(userId);
+              return next;
+            });
+          }, 60000);
+        }
+      })
+      .on("broadcast", { event: "stopped_recording" }, (payload) => {
+        const userId = payload.payload.user_id;
+        if (userId !== currentUserId) {
+          setRecordingUsers(prev => {
+            const next = new Set(prev);
+            next.delete(userId);
+            return next;
+          });
+          if (recordingTimeoutRef.current[userId]) clearTimeout(recordingTimeoutRef.current[userId]);
+        }
+      })
       // Presence
       .on("presence", { event: "sync" }, () => {
         const newState = channel.presenceState();
@@ -276,9 +324,6 @@ export function UnifiedChat({
         const inCall = users.filter((u: any) => u.is_in_call);
         const uniqueInCall = Array.from(new Map(inCall.map((item: any) => [item.user_id, item])).values());
         setActiveCallParticipants(uniqueInCall);
-
-        // Logic: If call active and participants > 1, update DB status to 'active' if currently 'waiting'
-        // This should theoretically be done by the initiator or server, but client-side initiator can do it.
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -295,36 +340,231 @@ export function UnifiedChat({
     return channel;
   };
 
-  // ... (Existing helper functions: markMessagesAsRead, scrollToBottom, handleTyping, handleSendMessage, voice functions ... kept same)
-  // Re-implementing simplified versions for tool replacement context size limits
+  const markMessagesAsRead = async () => {
+    const unreadMessages = messages.filter(
+      (msg) => 
+        !msg.isTemp &&
+        msg.user_id !== currentUserId && 
+        (!msg.read_by || !msg.read_by.includes(currentUserId))
+    );
 
-  const markMessagesAsRead = async () => { /* ... */ };
+    if (unreadMessages.length === 0) return;
+
+    for (const msg of unreadMessages) {
+      const newReadBy = [...(msg.read_by || []), currentUserId];
+      await supabase
+        .from(table)
+        .update({ read_by: newReadBy })
+        .eq("id", msg.id);
+    }
+  };
+
+  const markSingleMessageAsRead = async (messageId: string, currentReadBy: string[]) => {
+    if (currentReadBy.includes(currentUserId)) return;
+    
+    const newReadBy = [...currentReadBy, currentUserId];
+    await supabase
+      .from(table)
+      .update({ read_by: newReadBy })
+      .eq("id", messageId);
+  };
+
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  const handleTyping = () => { /* ... */ };
+  
+  const handleTyping = () => {
+    if (!channelRef.current) return;
+    channelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { user_id: currentUserId },
+    });
+  };
+
+  const handleRecordingStatus = (isRec: boolean) => {
+    if (!channelRef.current) return;
+    channelRef.current.send({
+      type: "broadcast",
+      event: isRec ? "recording" : "stopped_recording",
+      payload: { user_id: currentUserId },
+    });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
      e.preventDefault();
      if(!newMessage.trim()) return;
-     // ... Insert logic
+     
       const messageContent = newMessage.trim();
       setNewMessage("");
+      setSending(true);
+
+      const tempId = `temp-${Date.now()}`;
+      const tempMessage: ChatMessage = {
+        id: tempId,
+        user_id: currentUserId,
+        message: messageContent,
+        message_type: "text",
+        created_at: new Date().toISOString(),
+        read_by: [currentUserId],
+        sender_name: currentUserName,
+        sender_avatar: currentUserAvatar,
+        metadata: {},
+        isTemp: true,
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+
       try {
-        await supabase.from(table).insert({
+        const { data, error } = await supabase.from(table).insert({
           [idColumn]: id, user_id: currentUserId, message: messageContent, message_type: "text", read_by: [currentUserId]
-        });
-      } catch(e) { toast.error("Failed to send"); }
+        }).select().single();
+
+        if (error) throw error;
+
+        setMessages((prev) => 
+          prev.map(msg => msg.id === tempId ? {
+            ...msg, 
+            id: data.id, 
+            created_at: data.created_at, 
+            isTemp: false 
+          } : msg)
+        );
+      } catch(e) { 
+        console.error(e);
+        toast.error("Failed to send"); 
+        setMessages((prev) => prev.filter(msg => msg.id !== tempId));
+      } finally {
+        setSending(false);
+      }
   };
   
-  // Voice stub
-  const startRecording = () => { toast.info("Voice recording not fully re-implemented in this snippet for brevity but exists in previous."); };
-  const stopRecording = () => {};
-  const cancelRecording = () => {};
+  // Voice Recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-  // --- Call Handlers ---
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        sendVoiceNote(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+        handleRecordingStatus(false);
+      };
 
+      mediaRecorder.start();
+      setIsRecording(true);
+      handleRecordingStatus(true);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast.error("Could not access microphone. Please check permissions.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      stopRecordingTimer();
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      setIsRecording(false);
+      handleRecordingStatus(false);
+      stopRecordingTimer();
+      setRecordingDuration(0);
+      audioChunksRef.current = [];
+    }
+  };
+
+  const sendVoiceNote = async (audioBlob: Blob) => {
+    if (audioBlob.size === 0) return;
+
+    setSending(true);
+    const duration = recordingDuration;
+    setRecordingDuration(0);
+
+    const tempId = `temp-audio-${Date.now()}`;
+    const tempMessage: ChatMessage = {
+      id: tempId,
+      user_id: currentUserId,
+      message: URL.createObjectURL(audioBlob),
+      message_type: "audio",
+      created_at: new Date().toISOString(),
+      read_by: [currentUserId],
+      sender_name: currentUserName,
+      sender_avatar: currentUserAvatar,
+      metadata: { duration },
+      isTemp: true,
+    };
+    setMessages((prev) => [...prev, tempMessage]);
+
+    try {
+      const timestamp = Date.now();
+      const fileName = `${id}/${currentUserId}/${timestamp}.webm`; // Use 'id' (contextId) for folder path
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, audioBlob, {
+          contentType: "audio/webm",
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      const { data: msgData, error: msgError } = await supabase.from(table).insert({
+        [idColumn]: id,
+        user_id: currentUserId,
+        message: publicUrl,
+        message_type: "audio",
+        read_by: [currentUserId],
+        metadata: { duration }
+      }).select().single();
+
+      if (msgError) throw msgError;
+
+      setMessages((prev) => 
+        prev.map(msg => msg.id === tempId ? {
+          ...msg, 
+          id: msgData.id, 
+          message: msgData.message, 
+          created_at: msgData.created_at, 
+          isTemp: false 
+        } : msg)
+      );
+
+    } catch (error: any) {
+      console.error("Error sending voice note:", error);
+      toast.error("Failed to send voice note");
+      setMessages((prev) => prev.filter(msg => msg.id !== tempId));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // --- Call Handlers (Existing) ---
   const handleStartCall = async () => {
     try {
-      // 1. Create Call Log
       const { data: call, error } = await supabase
         .from("call_logs")
         .insert({
@@ -340,13 +580,11 @@ export function UnifiedChat({
       
       setCurrentCallId(call.id);
       
-      // 2. Add self as participant
       await supabase.from("call_participants").insert({
         call_id: call.id,
         user_id: currentUserId
       });
 
-      // 3. Update Presence
       channelRef.current?.track({
         user_id: currentUserId,
         user_name: currentUserName,
@@ -357,7 +595,6 @@ export function UnifiedChat({
       });
 
       setIsInCall(true);
-
     } catch (err: any) {
       toast.error("Failed to start call: " + err.message);
     }
@@ -371,7 +608,6 @@ export function UnifiedChat({
       setCurrentCallId(targetCallId);
       setIncomingCall(null);
 
-      // 1. Check if already a participant to avoid 409
       const { data: existingParticipant } = await supabase
         .from("call_participants")
         .select("id")
@@ -380,25 +616,18 @@ export function UnifiedChat({
         .maybeSingle();
 
       if (!existingParticipant) {
-        // Add self as participant if not exists
         await supabase.from("call_participants").insert({
           call_id: targetCallId,
           user_id: currentUserId
         });
       } else {
-        // Optional: Update joined_at or just proceed
-        // If they left and rejoined, we might want to clear 'left_at'
         await supabase.from("call_participants")
           .update({ left_at: null, joined_at: new Date().toISOString() })
           .eq("id", existingParticipant.id);
       }
 
-      // 2. Check if we need to promote status to 'active'
-      // If we are the 2nd person (or more), set to active
        await supabase.from("call_logs").update({ status: "active" }).eq("id", targetCallId).eq("status", "waiting");
 
-
-      // 3. Update Presence
       channelRef.current?.track({
         user_id: currentUserId,
         user_name: currentUserName,
@@ -409,7 +638,6 @@ export function UnifiedChat({
       });
 
       setIsInCall(true);
-
     } catch (err: any) {
       console.error("Error joining call:", err);
       toast.error("Failed to join call");
@@ -418,15 +646,12 @@ export function UnifiedChat({
 
   const handleLeaveCall = async () => {
     if (!currentCallId) return;
-
     try {
-      // 1. Update Participant
       await supabase.from("call_participants")
         .update({ left_at: new Date().toISOString() })
         .eq("call_id", currentCallId)
         .eq("user_id", currentUserId);
 
-      // 2. Update Presence
       channelRef.current?.track({
         user_id: currentUserId,
         user_name: currentUserName,
@@ -435,8 +660,6 @@ export function UnifiedChat({
         is_in_call: false
       });
       
-      // 3. Check if we are the last one?
-      // Simple logic: If activeCallParticipants (locally) is 1 (us), then close the call
       if (activeCallParticipants.length <= 1) {
          await supabase.from("call_logs")
            .update({ status: "ended", ended_at: new Date().toISOString() })
@@ -445,7 +668,6 @@ export function UnifiedChat({
 
       setIsInCall(false);
       setCurrentCallId(null);
-
     } catch (err) {
       console.error("Error leaving call", err);
     }
@@ -453,9 +675,37 @@ export function UnifiedChat({
 
   const handleIgnoreCall = () => {
     setIncomingCall(null);
-    // Optionally log this locally
   };
 
+
+  // Helpers
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    } else {
+      return formatDistanceToNow(date, { addSuffix: true });
+    }
+  };
+
+  const isMessageRead = (msg: ChatMessage) => {
+    if (!msg.read_by) return false;
+    return msg.read_by.some(id => id !== currentUserId);
+  };
+
+  const isVoiceNoteExpired = (dateString: string) => {
+    const date = new Date(dateString);
+    const hours = differenceInHours(new Date(), date);
+    return hours >= 24;
+  };
 
   if (isInCall && currentCallId) {
     return (
@@ -471,7 +721,6 @@ export function UnifiedChat({
     );
   }
 
-  // Incoming Call Overlay
   const IncomingCallOverlay = incomingCall ? (
     <CallNotification 
       callerName={incomingCall.initiator.name}
@@ -481,8 +730,11 @@ export function UnifiedChat({
     />
   ) : null;
 
+  const typingCount = typingUsers.size;
+  const recordingCount = recordingUsers.size;
+
   return (
-    <Card className="flex flex-col h-[600px] relative">
+    <Card className="flex flex-col h-[600px] max-h-full relative shadow-2xl border-border/50">
       {IncomingCallOverlay}
       
       <CardHeader className="border-b py-3 px-4">
@@ -492,7 +744,6 @@ export function UnifiedChat({
             {title}
           </CardTitle>
           <div className="flex items-center gap-2">
-             {/* Call History Dialog */}
              <Dialog>
                <DialogTrigger asChild>
                  <Button variant="ghost" size="icon" title="Call History">
@@ -507,13 +758,11 @@ export function UnifiedChat({
                </DialogContent>
              </Dialog>
 
-            {/* Start Call Button */}
             <Button 
               variant={activeCallParticipants.length > 0 || incomingCall ? "default" : "outline"}
               size="sm" 
               className={`h-8 gap-2 ${activeCallParticipants.length > 0 || incomingCall ? "bg-green-600 hover:bg-green-700 animate-pulse" : ""}`}
               onClick={() => {
-                console.log("Call button clicked. Incoming:", incomingCall, "Participants:", activeCallParticipants);
                 if (incomingCall) {
                   handleJoinCall(incomingCall.id);
                 } else if (activeCallParticipants.length > 0) {
@@ -542,13 +791,17 @@ export function UnifiedChat({
                   {onlineUsersCount > 1 ? `${onlineUsersCount} online` : "Offline"}
                 </span>
             </div>
+            {recordingCount > 0 && (
+               <span className="text-[10px] text-red-500 font-medium animate-pulse ml-2 hidden sm:inline">
+                {recordingCount === 1 ? "Someone is recording..." : "People are recording..."}
+              </span>
+            )}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="flex-1 p-0 overflow-hidden relative">
         <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-          {/* Messages Mapping (Simplified from previous implementation, but kept structure) */}
           <div className="space-y-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-12 text-center">
@@ -558,14 +811,56 @@ export function UnifiedChat({
             ) : (
               messages.map((message) => {
                  const isCurrentUser = message.user_id === currentUserId;
+                 const isRead = isMessageRead(message);
+                 const isAudio = message.message_type === 'audio';
+                 const isExpired = isAudio && isVoiceNoteExpired(message.created_at);
+                 
                  return (
                   <div key={message.id} className={`flex gap-3 ${isCurrentUser ? "flex-row-reverse" : ""}`}>
                     <Avatar className="h-8 w-8 mt-1"><AvatarImage src={message.sender_avatar || undefined} /><AvatarFallback>{message.sender_name.charAt(0)}</AvatarFallback></Avatar>
                     <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"} max-w-[80%]`}>
-                       <div className={`rounded-2xl px-4 py-2 text-sm ${isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                          <p>{message.message}</p>
+                       <div className={`rounded-2xl px-4 py-2 text-sm ${isCurrentUser ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm"} ${message.isTemp ? "opacity-70" : ""}`}>
+                          {!isCurrentUser && (
+                            <p className="text-[10px] font-semibold mb-1 opacity-70">
+                              {message.sender_name}
+                            </p>
+                          )}
+
+                          {isAudio ? (
+                            isExpired ? (
+                              <div className="flex items-center gap-2 italic opacity-70">
+                                <Trash2 className="h-4 w-4" />
+                                <span>Voice note expired</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-1 min-w-[200px]">
+                                <div className="flex items-center justify-between text-xs opacity-70 mb-1">
+                                  <span>Voice Note</span>
+                                  <span>{message.metadata?.duration ? formatDuration(message.metadata.duration) : ""}</span>
+                                </div>
+                                <audio 
+                                  src={message.message} 
+                                  controls 
+                                  className="h-8 w-full max-w-[250px]" 
+                                  style={{ borderRadius: '20px' }}
+                                />
+                                <p className="text-[10px] mt-1 opacity-70 text-center">
+                                  Auto-deletes in 24h
+                                </p>
+                              </div>
+                            )
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words">{message.message}</p>
+                          )}
                        </div>
-                       <span className="text-[10px] text-muted-foreground mt-1">{formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}</span>
+                       <div className="flex items-center gap-1 mt-1 px-1">
+                         <span className="text-[10px] text-muted-foreground">{formatMessageTime(message.created_at)}</span>
+                         {isCurrentUser && (
+                            <span title={isRead ? "Read by someone" : "Delivered"}>
+                              {message.isTemp ? <Loader2 className="h-3 w-3 animate-spin" /> : isRead ? <CheckCheck className="h-3 w-3 text-blue-500" /> : <Check className="h-3 w-3" />}
+                            </span>
+                         )}
+                       </div>
                     </div>
                   </div>
                  );
@@ -574,20 +869,70 @@ export function UnifiedChat({
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
+        {typingCount > 0 && recordingCount === 0 && (
+          <div className="absolute bottom-2 left-4 text-xs text-muted-foreground italic bg-background/80 px-2 py-1 rounded animate-pulse">
+            {typingCount === 1 ? "Someone is typing..." : "People are typing..."}
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="border-t p-3 bg-muted/30">
-          <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 bg-background"
-            />
-            <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-               <Send className="h-4 w-4" />
-            </Button>
-          </form>
+          {isRecording ? (
+             <div className="flex items-center gap-3 w-full bg-red-50 dark:bg-red-900/20 p-2 rounded-md border border-red-100 dark:border-red-900/30">
+               <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+               <span className="flex-1 font-mono text-sm text-red-600 dark:text-red-400">
+                 {formatDuration(recordingDuration)}
+               </span>
+               <Button 
+                 type="button" 
+                 variant="ghost" 
+                 size="sm" 
+                 onClick={cancelRecording}
+                 className="text-muted-foreground hover:text-red-500"
+               >
+                 Cancel
+               </Button>
+               <Button 
+                 type="button" 
+                 size="sm" 
+                 onClick={stopRecording}
+                 className="bg-red-500 hover:bg-red-600 text-white"
+               >
+                 <Square className="h-3 w-3 mr-2" fill="currentColor" />
+                 Stop & Send
+               </Button>
+             </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={startRecording}
+                disabled={sending}
+                title="Record Voice Note"
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+              <Input
+                value={newMessage}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  handleTyping();
+                }}
+                placeholder="Type a message..."
+                disabled={sending}
+                className="flex-1 bg-background"
+              />
+              <Button type="submit" size="icon" disabled={sending || !newMessage.trim()}>
+                {sending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </form>
+          )}
       </CardFooter>
     </Card>
   );

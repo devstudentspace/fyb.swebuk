@@ -46,7 +46,7 @@ import { ProjectMembersList } from "@/components/projects/project-members-list";
 import { ProjectRequestsList } from "@/components/projects/project-requests-list";
 import { ProjectFiles } from "@/components/projects/project-files";
 import { ProjectActivity } from "@/components/projects/project-activity";
-import { ProjectChat } from "@/components/projects/project-chat";
+import { UnifiedChat } from "@/components/chat/unified-chat";
 import Link from "next/link";
 
 interface DetailedProject {
@@ -659,8 +659,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </TabsContent>
         {((isMember && userMembershipStatus === "approved") || isClusterMember || canManage) && (
           <TabsContent value="chat" className="mt-4">
-            <ProjectChat
-              projectId={project.id}
+            <UnifiedChat
+              id={project.id}
+              table="project_chat"
+              idColumn="project_id"
+              title="Project Chat"
               currentUserId={user?.id || ""}
               currentUserName={currentUserProfile?.full_name || "You"}
               currentUserAvatar={currentUserProfile?.avatar_url || null}

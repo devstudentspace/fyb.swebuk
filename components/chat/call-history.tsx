@@ -5,8 +5,13 @@ import { createClient } from "@/lib/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow, format } from "date-fns";
-import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Clock } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Clock, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface CallLog {
   id: string;
@@ -19,8 +24,10 @@ interface CallLog {
   };
   participants: {
     user_id: string;
-    full_name: string;
-    avatar_url: string | null;
+    profile?: {
+      full_name: string;
+      avatar_url: string | null;
+    };
   }[];
 }
 
@@ -47,7 +54,8 @@ export function CallHistory({ contextId, contextType }: CallHistoryProps) {
           *,
           initiator:initiator_id(full_name, avatar_url),
           call_participants(
-            user_id
+            user_id,
+            profile:user_id(full_name, avatar_url)
           )
         `)
         .eq("context_id", contextId)
@@ -56,11 +64,6 @@ export function CallHistory({ contextId, contextType }: CallHistoryProps) {
 
       if (error) throw error;
 
-      // Enhance with participant details if needed, 
-      // but for now we just showing count or initiator is enough for list
-      // To get full participant details we'd need a deeper join or separate fetch
-      // Let's keep it simple: Show initiator and duration
-      
       const formattedLogs: CallLog[] = logs.map((log: any) => ({
         id: log.id,
         started_at: log.started_at,
@@ -98,37 +101,81 @@ export function CallHistory({ contextId, contextType }: CallHistoryProps) {
   }
 
   return (
-    <ScrollArea className="h-[200px] w-full pr-4">
-      <div className="space-y-3">
+    <ScrollArea className="h-[300px] w-full pr-4">
+      <div className="space-y-2">
         {calls.map((call) => {
           const isMissed = call.status === 'missed' || (call.status === 'ended' && call.participants.length <= 1);
-          
+          const participantCount = call.participants.length;
+
           return (
-            <div key={call.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${isMissed ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
-                  {isMissed ? <PhoneMissed className="h-4 w-4" /> : <PhoneOutgoing className="h-4 w-4" />}
+            <HoverCard key={call.id}>
+              <HoverCardTrigger asChild>
+                <button className="w-full text-left flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border cursor-pointer group outline-none">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full transition-colors ${isMissed ? 'bg-red-500/10 text-red-500 group-hover:bg-red-500/20' : 'bg-green-500/10 text-green-500 group-hover:bg-green-500/20'}`}>
+                      {isMissed ? <PhoneMissed className="h-4 w-4" /> : <PhoneOutgoing className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                         <p className="text-sm font-medium">{call.initiator.full_name}</p>
+                         {participantCount > 0 && (
+                           <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                             <Users className="h-3 w-3" />
+                             {participantCount}
+                           </span>
+                         )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(call.started_at), "MMM d, h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] font-normal">
+                     {isMissed ? "Missed" : getDuration(call.started_at, call.ended_at)}
+                  </Badge>
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 max-w-[calc(100vw-2rem)] p-0 overflow-hidden" align="start">
+                <div className="bg-muted/50 p-3 border-b flex items-center justify-between">
+                   <span className="text-sm font-medium">Call Details</span>
+                   <span className="text-xs text-muted-foreground">{format(new Date(call.started_at), "PP p")}</span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">
-                    {call.initiator.full_name}
-                    {call.participants.length > 1 && (
-                      <span className="text-muted-foreground font-normal ml-1">
-                        +{call.participants.length - 1} others
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {format(new Date(call.started_at), "MMM d, h:mm a")}
-                  </p>
+                <div className="p-3 space-y-3">
+                   {/* Initiator */}
+                   <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 border">
+                        <AvatarImage src={call.initiator.avatar_url || undefined} />
+                        <AvatarFallback>{call.initiator.full_name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{call.initiator.full_name}</span>
+                        <span className="text-xs text-muted-foreground">Initiator</span>
+                      </div>
+                   </div>
+                   
+                   {/* Participants */}
+                   {call.participants.length > 0 && (
+                     <>
+                       <div className="h-px bg-border" />
+                       <div className="space-y-2">
+                         <span className="text-xs font-semibold text-muted-foreground uppercase">Participants ({call.participants.length})</span>
+                         <div className="grid grid-cols-1 gap-2">
+                           {call.participants.map((p) => (
+                             <div key={p.user_id} className="flex items-center gap-2">
+                               <Avatar className="h-6 w-6">
+                                 <AvatarImage src={p.profile?.avatar_url || undefined} />
+                                 <AvatarFallback>{p.profile?.full_name?.charAt(0) || "?"}</AvatarFallback>
+                               </Avatar>
+                               <span className="text-sm text-foreground/80">{p.profile?.full_name || "Unknown"}</span>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     </>
+                   )}
                 </div>
-              </div>
-              <div className="text-right">
-                 <Badge variant="outline" className="text-xs font-normal">
-                   {isMissed ? "Missed" : getDuration(call.started_at, call.ended_at)}
-                 </Badge>
-              </div>
-            </div>
+              </HoverCardContent>
+            </HoverCard>
           );
         })}
       </div>

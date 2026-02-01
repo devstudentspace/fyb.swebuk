@@ -15,7 +15,6 @@ interface CallParticipant {
   joined_at: string;
   is_muted: boolean;
   is_video_on: boolean;
-  is_speaking: boolean;
 }
 
 interface CallInterfaceProps {
@@ -33,6 +32,26 @@ const ICE_SERVERS = {
   ],
 };
 
+const WaveVisual = () => (
+  <div className="flex items-center gap-0.5 h-3">
+    <motion.div
+      className="w-1 bg-green-500 rounded-full"
+      animate={{ height: [4, 12, 4] }}
+      transition={{ duration: 0.5, repeat: Infinity }}
+    />
+    <motion.div
+      className="w-1 bg-green-500 rounded-full"
+      animate={{ height: [4, 16, 4] }}
+      transition={{ duration: 0.4, repeat: Infinity, delay: 0.1 }}
+    />
+    <motion.div
+      className="w-1 bg-green-500 rounded-full"
+      animate={{ height: [4, 10, 4] }}
+      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+    />
+  </div>
+);
+
 export function CallInterface({
   callId,
   currentUserId,
@@ -45,12 +64,47 @@ export function CallInterface({
   const [isVideoOn, setIsVideoOn] = useState(false);
   const [duration, setDuration] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState<string>("Connecting...");
+  const [speakingUsers, setSpeakingUsers] = useState<Set<string>>(new Set());
 
   // WebRTC Refs
   const localStreamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef<{ [key: string]: RTCPeerConnection }>({});
   const channelRef = useRef<any>(null);
+  
+  // Audio Analysis Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioAnalysersRef = useRef<Map<string, AnalyserNode>>(new Map());
+  const audioSourcesRef = useRef<Map<string, MediaStreamAudioSourceNode>>(new Map());
+
   const supabase = createClient();
+
+  // Helper to setup audio analysis for a stream
+  const setupAudioAnalysis = (stream: MediaStream, userId: string) => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      // Check if we already have an analyser for this user to avoid duplicates
+      if (audioAnalysersRef.current.has(userId)) return;
+
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      audioSourcesRef.current.set(userId, source);
+      audioAnalysersRef.current.set(userId, analyser);
+      
+    } catch (err) {
+      console.error(`Error setting up audio analysis for ${userId}:`, err);
+    }
+  };
 
   // 1. Initialization Effect
   useEffect(() => {
@@ -65,6 +119,9 @@ export function CallInterface({
           video: false 
         });
         localStreamRef.current = stream;
+
+        // Setup local audio analysis
+        setupAudioAnalysis(stream, currentUserId);
 
         if (!mounted) return;
 
@@ -85,7 +142,7 @@ export function CallInterface({
         channel
           .on("presence", { event: "sync" }, () => {
             const state = channel.presenceState();
-            console.log("Presence Sync:", state);
+            // console.log("Presence Sync:", state);
             
             const currentUsers = Object.values(state)
               .flat()
@@ -96,7 +153,6 @@ export function CallInterface({
                 joined_at: u.joined_at,
                 is_muted: u.is_muted,
                 is_video_on: u.is_video_on,
-                is_speaking: false
               }))
               .filter(u => u.user_id !== currentUserId);
 
@@ -109,19 +165,23 @@ export function CallInterface({
             uniqueUsers.forEach(user => {
               if (!peersRef.current[user.user_id]) {
                 const shouldInitiate = currentUserId > user.user_id;
-                console.log(`Connection check for ${user.user_name} (${user.user_id}). Initiator: ${shouldInitiate}`);
                 // Always create PC, but only create offer if initiator
                 createPeerConnection(user.user_id, shouldInitiate, channel);
               }
             });
 
-            // Cleanup stale peers
+            // Cleanup stale peers and analysers
             const activeIds = uniqueUsers.map(u => u.user_id);
             Object.keys(peersRef.current).forEach(id => {
               if (!activeIds.includes(id)) {
                 console.log("Removing stale peer:", id);
                 peersRef.current[id].close();
                 delete peersRef.current[id];
+                
+                // Cleanup audio nodes
+                audioAnalysersRef.current.delete(id);
+                // We don't disconnect sources explicitly usually as they are tied to stream, 
+                // but good practice if needed. 
               }
             });
           })
@@ -155,7 +215,7 @@ export function CallInterface({
       mounted = false;
       cleanupCall();
     };
-  }, [callId]); // Re-run if callId changes (shouldn't happen in-call but safe)
+  }, [callId]); 
 
   // 2. Timer Effect
   useEffect(() => {
@@ -168,6 +228,37 @@ export function CallInterface({
     };
   }, [participants.length]);
 
+  // 3. Audio Level Polling Effect
+  useEffect(() => {
+    const checkAudioLevels = () => {
+      const threshold = 10; // Sensitivity
+      const newSpeakingUsers = new Set<string>();
+      const dataArray = new Uint8Array(256);
+
+      audioAnalysersRef.current.forEach((analyser, userId) => {
+        analyser.getByteFrequencyData(dataArray);
+        const sum = dataArray.reduce((a, b) => a + b, 0);
+        const average = sum / dataArray.length;
+        
+        if (average > threshold) {
+          // Double check mute status for local user
+          if (userId === currentUserId && isMuted) return;
+          newSpeakingUsers.add(userId);
+        }
+      });
+      
+      // Update state only if changed to avoid re-renders
+      setSpeakingUsers(prev => {
+         if (prev.size !== newSpeakingUsers.size) return newSpeakingUsers;
+         for (let user of newSpeakingUsers) if (!prev.has(user)) return newSpeakingUsers;
+         return prev;
+      });
+    };
+
+    const intervalId = setInterval(checkAudioLevels, 100);
+    return () => clearInterval(intervalId);
+  }, [isMuted, currentUserId]); // Depend on mute state
+
   const cleanupCall = () => {
     console.log("Cleaning up call resources...");
     // Stop local tracks
@@ -177,6 +268,14 @@ export function CallInterface({
     Object.values(peersRef.current).forEach(pc => pc.close());
     peersRef.current = {};
     
+    // Close Audio Context
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    audioAnalysersRef.current.clear();
+    audioSourcesRef.current.clear();
+
     // Leave channel
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -187,7 +286,7 @@ export function CallInterface({
   const createPeerConnection = (targetUserId: string, initiator: boolean, channel: any) => {
     if (peersRef.current[targetUserId]) return peersRef.current[targetUserId];
 
-    console.log(`Creating PeerConnection for ${targetUserId} (Initiator: ${initiator})`);
+    // console.log(`Creating PeerConnection for ${targetUserId} (Initiator: ${initiator})`);
     const pc = new RTCPeerConnection(ICE_SERVERS);
     peersRef.current[targetUserId] = pc;
 
@@ -216,12 +315,14 @@ export function CallInterface({
 
     // Handle Remote Stream
     pc.ontrack = (event) => {
-      console.log(`Received remote track from ${targetUserId}`);
+      // console.log(`Received remote track from ${targetUserId}`);
       const remoteAudio = document.getElementById(`audio-${targetUserId}`) as HTMLAudioElement;
       if (remoteAudio) {
         remoteAudio.srcObject = event.streams[0];
-        // Ensure playback
         remoteAudio.play().catch(e => console.error("Auto-play failed:", e));
+        
+        // Setup Audio Analysis for remote stream
+        setupAudioAnalysis(event.streams[0], targetUserId);
       }
     };
 
@@ -231,7 +332,6 @@ export function CallInterface({
         try {
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
-          console.log(`Sending OFFER to ${targetUserId}`);
           channel.send({
             type: "broadcast",
             event: "signal",
@@ -254,8 +354,6 @@ export function CallInterface({
   const handleSignal = async (payload: any, channel: any) => {
     const { type, target, sender, sdp, candidate } = payload;
     if (target !== currentUserId) return; // Not for us
-
-    console.log(`Received Signal ${type} from ${sender}`);
     
     // Ensure we have a PC (if we are the receiver/answerer)
     const pc = peersRef.current[sender] || createPeerConnection(sender, false, channel);
@@ -263,8 +361,6 @@ export function CallInterface({
     try {
       if (type === "offer") {
         if (pc.signalingState !== "stable") {
-           // Collision handling or restart? usually roll with it if we are answerer
-           console.warn("Received offer in non-stable state, ignoring or handling carefully.");
            await Promise.all([
              pc.setLocalDescription({type: "rollback"} as any),
              pc.setRemoteDescription(new RTCSessionDescription(sdp))
@@ -275,7 +371,6 @@ export function CallInterface({
         
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        console.log(`Sending ANSWER to ${sender}`);
         channel.send({
           type: "broadcast",
           event: "signal",
@@ -318,7 +413,6 @@ export function CallInterface({
   };
 
   const handleEndCall = () => {
-    // We rely on cleanupCall via unmount to leave presence
     onLeave();
   };
 
@@ -351,10 +445,12 @@ export function CallInterface({
           {/* Self */}
           <motion.div
               layout
-              className="relative aspect-video rounded-xl overflow-hidden bg-muted border border-border group"
+              className={`relative aspect-video rounded-xl overflow-hidden bg-muted border transition-colors group ${
+                speakingUsers.has(currentUserId) ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-border'
+              }`}
             >
              <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-                <Avatar className="h-20 w-20 ring-4 ring-background/10">
+                <Avatar className={`h-20 w-20 transition-all duration-300 ${speakingUsers.has(currentUserId) ? 'ring-4 ring-green-500/50 scale-110' : 'ring-4 ring-background/10'}`}>
                   <AvatarImage src={currentUserAvatar || undefined} />
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                     {currentUserName.charAt(0).toUpperCase()}
@@ -363,7 +459,21 @@ export function CallInterface({
              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white text-sm font-medium truncate">You {isMuted && "(Muted)"}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-sm font-medium truncate">You</span>
+                    {speakingUsers.has(currentUserId) && <WaveVisual />}
+                  </div>
+                  <div className="flex gap-1.5">
+                     {isMuted ? (
+                       <div className="bg-red-500/80 p-1 rounded-full">
+                         <MicOff className="h-3 w-3 text-white" />
+                       </div>
+                     ) : speakingUsers.has(currentUserId) ? (
+                        <div className="bg-green-500/80 p-1 rounded-full">
+                           <Mic className="h-3 w-3 text-white" />
+                        </div>
+                     ) : null}
+                  </div>
                 </div>
               </div>
           </motion.div>
@@ -375,13 +485,15 @@ export function CallInterface({
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               layout
-              className="relative aspect-video rounded-xl overflow-hidden bg-muted border border-border group"
+              className={`relative aspect-video rounded-xl overflow-hidden bg-muted border transition-colors group ${
+                speakingUsers.has(participant.user_id) ? 'border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'border-border'
+              }`}
             >
               {/* Audio Element */}
               <audio id={`audio-${participant.user_id}`} autoPlay playsInline />
 
               <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-                   <Avatar className="h-20 w-20 ring-4 ring-background/10">
+                   <Avatar className={`h-20 w-20 transition-all duration-300 ${speakingUsers.has(participant.user_id) ? 'ring-4 ring-green-500/50 scale-110' : 'ring-4 ring-background/10'}`}>
                     <AvatarImage src={participant.user_avatar || undefined} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                       {participant.user_name.charAt(0).toUpperCase()}
@@ -391,15 +503,22 @@ export function CallInterface({
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-white text-sm font-medium truncate">
-                    {participant.user_name}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white text-sm font-medium truncate">
+                      {participant.user_name}
+                    </span>
+                    {speakingUsers.has(participant.user_id) && <WaveVisual />}
+                  </div>
                   <div className="flex gap-1.5">
-                     {participant.is_muted && (
+                     {participant.is_muted ? (
                        <div className="bg-red-500/80 p-1 rounded-full">
                          <MicOff className="h-3 w-3 text-white" />
                        </div>
-                     )}
+                     ) : speakingUsers.has(participant.user_id) ? (
+                        <div className="bg-green-500/80 p-1 rounded-full">
+                           <Mic className="h-3 w-3 text-white" />
+                        </div>
+                     ) : null}
                   </div>
                 </div>
               </div>
